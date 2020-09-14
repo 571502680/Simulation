@@ -37,7 +37,7 @@ class Robot(object):
         self._urdf = URDF.from_parameter_server(key='robot_description')
         self._kdl_tree = kdl_tree_from_urdf_model(self._urdf)
         self._arm_chain = self._kdl_tree.getChain(self._base_link, self._tip_link)
-        self._joint_names = self._urdf.get_chain(self._base_link, self._tip_link, links=False, fixed=False)
+        self._joint_names = ['shoulder_pan_joint', 'shoulder_lift_joint', 'elbow_joint', 'wrist_1_joint', 'wrist_2_joint', 'wrist_3_joint']
         self._num_jnts = len(self._joint_names)
 
         # KDL  forward kinematics
@@ -59,8 +59,7 @@ class Robot(object):
         self.joint_cmd_pub = rospy.Publisher(
             rospy.resolve_name('arm_controller/command'),
             JointTrajectory, queue_size=10)
-        self.joint_cmd = JointTrajectory()
-        self.joint_cmd.joint_names = self._joint_names
+        
 
 
     def forward_kinematics(self, q):
@@ -90,14 +89,13 @@ class Robot(object):
         return np.array(result) if result is not None else None
 
     def robot_state_cb(self, data):
-        joint_names = data.name
         
         q = np.zeros(self._num_jnts)
         dq = np.zeros(self._num_jnts)
         # assign joint angle and velocity by joint name
         for i in range(self._num_jnts):
-            for j in range(self._num_jnts):
-                if data.name[i] == self._joint_names[j]:
+            for j in range( len(data.name) ):
+                if data.name[j] == self._joint_names[i]:
                     q[i] = data.position[j]
                     dq[i] = data.velocity[j]
                     break
@@ -112,8 +110,9 @@ class Robot(object):
     # motion planning
     def move_to_joint(self, joint, t):
         # send joint to robot
-        
-        self.joint_cmd.header.stamp = rospy.Time.now()
+        joint_cmd = JointTrajectory()
+        joint_cmd.header.stamp = rospy.Time.now()
+        joint_cmd.joint_names = self._joint_names
 
         if self._q is not None:
             # q0 current joints
@@ -121,7 +120,7 @@ class Robot(object):
             q0.positions = self._q.tolist()
             q0.velocities = [0.]*6
             q0.time_from_start.secs = 0.01
-            self.joint_cmd.points.append(q0)
+            # joint_cmd.points.append(q0)
 
         #q1 target joints
         q1 = JointTrajectoryPoint()
@@ -133,29 +132,31 @@ class Robot(object):
         q1.velocities = [0.]*6
         # q1.time_from_start.secs = t        
         q1.time_from_start = rospy.Duration(t)
-        self.joint_cmd.points.append(q1)
-        self.joint_cmd_pub.publish(self.joint_cmd)
+        joint_cmd.points.append(q1)
+        self.joint_cmd_pub.publish(joint_cmd)
         rospy.sleep(t)
 
     def move_to_frame(self, x, t):
         # x [x,y,z, qx, qy, qz, qw,]
         # t, time for execution
-        qd = Float64MultiArray()
-        qd.data = np.concatenate([x, np.array([t])])
-        self.pose_cmd_pub.publish(qd)
+        # qd = Float64MultiArray()
+        # qd.data = np.concatenate([x, np.array([t])])
+        # self.pose_cmd_pub.publish(qd)
 
-        # qd = self.inverse_kinematics(x[:3],x[3:])
-        # if qd is None:
-        #     rospy.logerr('qd is None, Inverse kinematics fail!!!')
-        # else:
-        #     self.move_to_joint(qd, t)
+        qd = self.inverse_kinematics(x[:3],x[3:])
+        if qd is None:
+            rospy.logerr('qd is None, Inverse kinematics fail!!!')
+        else:
+            self.move_to_joint(qd, t)
+
     def home(self, t=10):
 
-        p = np.array([0,0,0.4,0, 0, 0, 1])
-        self.move_to_frame(p,t)
+        p = np.array([  1.56166289e+00 , -2.20212942e+00,   2.10209237e+00,  -1.44570209e+00,
+  -1.57076397e+00,  -1.19897808e-03])
+        self.move_to_joint(p,t)
 
 
-    def sin_test(self, delta_z = 0.1, T = 20.):
+    def sin_test(self, delta_z = 0.2, T = 20.):
         # sin movement test, z = A*sin(w*t)
         
         x0 = np.copy(self._x)

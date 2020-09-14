@@ -16,6 +16,6 @@
 
  
 
-  <include file="$(find ur_control)/ur_control.launch"/> 
+  <!--<include file="$(find ur_control)/ur_control.launch"/> -->
 
 </launch>

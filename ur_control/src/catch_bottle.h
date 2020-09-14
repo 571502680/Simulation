@@ -101,7 +101,7 @@ public:
                 current_JntArr_(i) = 0;
         }
 	p_fk_solver_->JntToCart(current_JntArr_, frame_wrist3_base_); 
-	//ROS_INFO_STREAM("current pos: x="<<frame_wrist3_base_.p.data[0]<<"  y="<<frame_wrist3_base_.p.data[1]<<"  z="<<frame_wrist3_base_.p.data[2]);
+	ROS_INFO_STREAM("current pos: x="<<frame_wrist3_base_.p.data[0]<<"  y="<<frame_wrist3_base_.p.data[1]<<"  z="<<frame_wrist3_base_.p.data[2]);
         bsub_ = false;
         bstart_cal_ = false;
 
@@ -129,36 +129,38 @@ public:
 
     void spin()
     {	
-	ros::Rate rate(125);
-	while(ros::ok()){
-	ros::spinOnce();
-	p_fk_solver_->JntToCart(current_JntArr_, frame_wrist3_base_);    //frame_wrist3_base_ 为正运动学计算出的位姿
+
+        ros::spin();
+	// ros::Rate rate(125);
+	// while(ros::ok()){
+	// ros::spinOnce();
+	// p_fk_solver_->JntToCart(current_JntArr_, frame_wrist3_base_);    //frame_wrist3_base_ 为正运动学计算出的位姿
 
 
-        ROS_INFO_STREAM("current pos: x="<<frame_wrist3_base_.p.data[0]<<"  y="<<frame_wrist3_base_.p.data[1]<<"  z="<<frame_wrist3_base_.p.data[2]);
-       // ROS_INFO_STREAM("current j0 ="<<current_JntArr_(0)<<"  j1="<<current_JntArr_(1)<<"  j2="<<current_JntArr_(2));
+    //     // ROS_INFO_STREAM("current pos: x="<<frame_wrist3_base_.p.data[0]<<"  y="<<frame_wrist3_base_.p.data[1]<<"  z="<<frame_wrist3_base_.p.data[2]);
+    //    // ROS_INFO_STREAM("current j0 ="<<current_JntArr_(0)<<"  j1="<<current_JntArr_(1)<<"  j2="<<current_JntArr_(2));
        
 	
-	std_msgs::Float64MultiArray end_pose;
-        end_pose.data.resize(7);
-        end_pose.data[0] = frame_wrist3_base_.p.data[0];
-        end_pose.data[1] = frame_wrist3_base_.p.data[1];
-        end_pose.data[2] = frame_wrist3_base_.p.data[2];
-        double qx=0;
-        double qy=0;
-        double qz=0;
-        double qw=0;
+	// std_msgs::Float64MultiArray end_pose;
+    //     end_pose.data.resize(7);
+    //     end_pose.data[0] = frame_wrist3_base_.p.data[0];
+    //     end_pose.data[1] = frame_wrist3_base_.p.data[1];
+    //     end_pose.data[2] = frame_wrist3_base_.p.data[2];
+    //     double qx=0;
+    //     double qy=0;
+    //     double qz=0;
+    //     double qw=0;
 
-        frame_wrist3_base_.M.GetQuaternion(qx,qy,qz,qw);
-        end_pose.data[3] = qx;
-        end_pose.data[4] = qy;
-        end_pose.data[5] = qz;
-        end_pose.data[6] = qw;
+    //     frame_wrist3_base_.M.GetQuaternion(qx,qy,qz,qw);
+    //     end_pose.data[3] = qx;
+    //     end_pose.data[4] = qy;
+    //     end_pose.data[5] = qz;
+    //     end_pose.data[6] = qw;
 
-        pub_end_pose_.publish(end_pose);
+    //     pub_end_pose_.publish(end_pose);
 	
-	rate.sleep();
-	}
+	// rate.sleep();
+	// }
         
 
 
