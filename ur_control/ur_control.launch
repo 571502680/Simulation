@@ -1,0 +1,43 @@
+<launch>
+
+
+    <!--  USB serial
+     ls -l /dev/ttyUSB*
+     sudo chmod a+rw /dev/ttyUSB0 -->
+<!--    <group ns = "robotiq">-->
+<!--    <include file="$(find robotiq_85_bringup)/launch/robotiq_85.launch"/>-->
+<!--    </group>-->
+<!--    &lt;!&ndash; 10.1.1.198 &ndash;&gt;-->
+<!--    <include file="$(find cortex_bridge)/launch/cortex_bridge.launch"/>-->
+
+    <!-- 10.1.1.179 -->
+<!--    <group ns = "UR5e">-->
+<!--    <include file="$(find ur_modern_driver)/launch/ur5e_bringup.launch"/>-->
+<!--    </group>-->
+
+
+    <!--<node pkg="tf" type="static_transform_publisher" name="tf_map2base_link"-->
+    <!--args="0.3 -0.2 0.8249 1.5708 0 0 map base_link 1000" />-->
+    <!--<node pkg="tf" type="static_transform_publisher" name="tf_map2base_link"-->
+          <!--args="0.132503 0.238787 -0.818065  -1.57535  0.00177465 -0.0138208  base_link map  1000" />-->
+
+<!--    <node name="rviz_screw" pkg="rviz" type="rviz" args="-d $(find screw_bolt)/config/rviz_screw.rviz">-->
+<!--    </node>-->
+
+
+<!--    <rosparam command="load" file="$(find catch_control)/config/env_param.yaml" />-->
+
+<!--    <node pkg="tf" type="static_transform_publisher" name="gripper2tool0"-->
+<!--          args="0 0 0 0 -1.570796327 0  tool0 gripper_root_link  1000" />-->
+
+<!--    <node name="rviz" pkg="rviz" type="rviz" args="-d $(find catch_control)/config/catch_bottle.rviz">-->
+<!--    </node>-->
+
+<!--    &lt;!&ndash; base_link is fixed. Markers is relative to map&ndash;&gt;-->
+<!--    <node pkg="tf" type="static_transform_publisher" name="base2map"-->
+<!--    args="-0.452872 0.331446 -0.0393143 0.00222333 -0.00330297 0.00157233 0.999991  base_link map  500" />-->
+
+    <node pkg="ur_control" type="ur_control" name="ur_control">
+    </node>
+
+</launch>
