@@ -1,7 +1,7 @@
 __pycache_/
 .vscode/
 .idea/
-*.pth
+
 
 *.ipynb_checkpoints
 *.DS_Store
@@ -9,7 +9,6 @@ __pycache_/
 *.egg-info
 *.pyc
 *__pychache__
-
 
 
 ## Core latex/pdflatex auxiliary files:
@@ -57,4 +56,6 @@ checkpoint_dir/
 
 *.zip
 *.exe
-/vision_process/scripts/DenseFusion_Lib/models/
+
+#DenseFusion
+*.pth

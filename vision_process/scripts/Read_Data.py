@@ -347,7 +347,7 @@ def test_get_object_pose():
     read_Data=Read_Data()
     read_Data.get_world_info()
 
-def test_get_ojbect_mask():
+def test_get_Trans_Matrix():
     """
     这里面获取整个物体的mask(相对于Kinect的)
     @return:
@@ -506,10 +506,10 @@ def get_pose_in_camera():
 
 
 if __name__ == '__main__':
-    get_pose_in_camera()
+    # get_pose_in_camera()
     # check_object_pose()
     # test_read_image()
-    # test_get_ojbect_mask()
+    test_get_Trans_Matrix()
     # read_obj=Read_Obj()
     # read_obj.read_file("/home/elevenjiang/Desktop/ocrtoc_materials/models/a_cups/meshes/textured.obj")
 
