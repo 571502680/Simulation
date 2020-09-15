@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+#-*- coding: utf-8 -*-
+
 import rospy
 import numpy as np
 from trac_ik_python.trac_ik import IK
@@ -236,22 +239,7 @@ class Robot(object):
                     target_x = np.concatenate((pos[j,:], ori[j,:])   )
                     self.move_to_frame(target_x, 1./sample_freq  )
                     rospy.sleep(1./sample_freq)
-
-
-
-
-
-
-
         return True
-
-
-
-
-
-
-
-
 
     @property
     def x(self):
@@ -308,7 +296,13 @@ class Robot(object):
         return self._p
 
 class objects(object):
-    def __init__(self, init_node = False ):
+    def __init__(self, init_node = True,get_pose_from_gazebo=False):
+        """
+        获取物体姿态参数
+        :param init_node:初始化node
+        :param get_pose_from_gazebo: True则从Gazebo中获取,False则从DenseFusion中获取
+                                     DenseFusion的话,需要rosrun vision_process DenseFusionInfer.py
+        """
         if init_node:
             rospy.init_node('object_positions')
 
@@ -317,7 +311,10 @@ class objects(object):
         # subscribe object position and orientation
         ## todo, we need to do object localization by the cameras
         ## now, I use the Gazebo topic to get them in world frame.
-        self.objects_state_sub = rospy.Subscriber("gazebo/model_states", ModelStates, self.objects_state_cb, queue_size=1000 )
+        if get_pose_from_gazebo:
+            self.objects_state_sub = rospy.Subscriber("gazebo/model_states", ModelStates, self.objects_state_cb, queue_size=10)
+        else:
+            self.DenseFuion_result_sub=rospy.Subscriber("/poseinworld",ModelStates,self.objects_state_cb,queue_size=10)
 
     def objects_state_cb(self,data):
         self._names = data.name
@@ -328,7 +325,6 @@ class objects(object):
             self._x[i,:3] = np.array([pose.position.x, pose.position.y, pose.position.z ])
             self._x[i,3:] = np.array([pose.orientation.x, pose.orientation.y, pose.orientation.z,
                  pose.orientation.w ] )
-
     @property
     def x(self):
         """
@@ -342,6 +338,27 @@ class objects(object):
         :return: [name1, name2...] )
         """
         return self._names
+
+    def get_pose(self):
+        rate=rospy.Rate(10)
+        while not rospy.is_shutdown():
+            if self._x is not None:
+                print("object_name is:")
+                print(self._names)
+                print ("Pose is")
+                print(self._x)
+
+            else:
+                print("[Warning],can't get the pose")
+            rate.sleep()
+
+
+
+if __name__ == '__main__':
+    read_ojbects=objects(init_node=True,get_pose_from_gazebo=True)
+    read_ojbects.get_pose()#测试函数,获取对应的pose
+
+
 
 
 
