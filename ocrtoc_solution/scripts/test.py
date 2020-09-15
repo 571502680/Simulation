@@ -22,20 +22,32 @@ obj = rc.objects()
 # %%
 
 # %%
-rospy.sleep(0.5)
+rospy.sleep(1)
 ur.home(t=4)
+rospy.sleep(4)
 
+p1,p2,p3,p4 = np.copy(ur.x),np.copy(ur.x),np.copy(ur.x),np.copy(ur.x)
+print ur.x
+offset = 0.3
+p1[:3] = p1[:3] + np.array([0, offset, 0  ]  )
+p2[:3] = p2[:3] + np.array([offset, offset, 0  ]  )
+p3[:3] = p3[:3] + np.array([offset, -offset, 0  ]  )
+p4[:3] = p4[:3] + np.array([offset, -offset -0.1, 0  ]  )
 
-print ur._joint_names
+poses = np.concatenate((p1.reshape(1,-1),p2.reshape(1,-1),p3.reshape(1,-1),p4.reshape(1,-1) ))
+# print p1
+ur.motion_generation(poses, vel=0.2)
 
-print(ur.q)
-print(ur.p)
+ur.home(t=4)
+# print range(1,4)
+# print(ur.q)
+# print(ur.p)
 # ur.sin_test()
 # rospy.sleep(1.0)
 # print(ur._num_jnts)
 
 # %%
-print obj.x[1]
+# print obj.x[1]
 
 
 

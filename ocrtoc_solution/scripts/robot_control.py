@@ -39,6 +39,7 @@ class Robot(object):
         self._arm_chain = self._kdl_tree.getChain(self._base_link, self._tip_link)
         self._joint_names = ['shoulder_pan_joint', 'shoulder_lift_joint', 'elbow_joint', 'wrist_1_joint', 'wrist_2_joint', 'wrist_3_joint']
         self._num_jnts = len(self._joint_names)
+        self._stop = False
 
         # KDL  forward kinematics
         self._fk_p_kdl = PyKDL.ChainFkSolverPos_recursive(self._arm_chain)
@@ -79,9 +80,9 @@ class Robot(object):
         return np.array([pos[0], pos[1], pos[2], quat[0], quat[1], quat[2], quat[3]]), jac_array
 
     def inverse_kinematics(self, pos, quat, seed=None):
-        seed = self._q
+        
         if seed is None:
-            seed = [1.5621, -2.12, 1.72, -1.1455, -1.57, 0]
+            seed  = self._q
         result = self.trac_ik_solver.get_ik(seed,
                                             pos[0], pos[1], pos[2],  # X, Y, Z
                                             quat[0], quat[1], quat[2], quat[3])     # QX, QY, QZ, QW     
@@ -134,9 +135,9 @@ class Robot(object):
         q1.time_from_start = rospy.Duration(t)
         joint_cmd.points.append(q1)
         self.joint_cmd_pub.publish(joint_cmd)
-        rospy.sleep(t)
+        # rospy.sleep(t)
 
-    def move_to_frame(self, x, t):
+    def move_to_frame(self, x, t,seed=None):
         # x [x,y,z, qx, qy, qz, qw,]
         # t, time for execution
         # qd = Float64MultiArray()
@@ -147,12 +148,11 @@ class Robot(object):
         if qd is None:
             rospy.logerr('qd is None, Inverse kinematics fail!!!')
         else:
-            self.move_to_joint(qd, t)
+            self.move_to_joint(qd, t )
 
     def home(self, t=10):
 
-        p = np.array([  1.56166289e+00 , -2.20212942e+00,   2.10209237e+00,  -1.44570209e+00,
-  -1.57076397e+00,  -1.19897808e-03])
+        p = np.array([ 1.55986781, -2.1380509 ,  2.49498554, -1.93086818, -1.5671494 , -0.00523367])
         self.move_to_joint(p,t)
 
 
@@ -174,8 +174,75 @@ class Robot(object):
 
         return True
 
-    def motion_generation(self, poses, vel=0.2, intepolation='linear'):
+    import numpy as np
+
+    def slerp(self, v0, v1, t_array):
+        """Spherical linear interpolation."""
+        # from https://en.wikipedia.org/wiki/Slerp
+        # >>> slerp([1,0,0,0], [0,0,0,1], np.arange(0, 1, 0.001))
+        t_array = np.array(t_array)
+        v0 = np.array(v0)
+        v1 = np.array(v1)
+        dot = np.sum(v0 * v1)
+
+        if dot < 0.0:
+            v1 = -v1
+            dot = -dot
+        
+        DOT_THRESHOLD = 0.9995
+        if dot > DOT_THRESHOLD:
+            result = v0[np.newaxis,:] + t_array[:,np.newaxis] * (v1 - v0)[np.newaxis,:]
+            return (result.T / np.linalg.norm(result, axis=1)).T
+        
+        theta_0 = np.arccos(dot)
+        sin_theta_0 = np.sin(theta_0)
+
+        theta = theta_0 * t_array
+        sin_theta = np.sin(theta)
+        
+        s0 = np.cos(theta) - dot * sin_theta / sin_theta_0
+        s1 = sin_theta / sin_theta_0
+        return (s0[:,np.newaxis] * v0[np.newaxis,:]) + (s1[:,np.newaxis] * v1[np.newaxis,:])
+        
+    def motion_generation(self, poses, vel=0.02, intepolation='linear'):
         # poses : (n,7) array, n: num of viapoints. [position, quaternion]
+        poses = np.concatenate([self.x.reshape(1,-1), poses],axis=0) # add current points
+        keypoints_num = poses.shape[0]
+        print poses[:,:3]
+
+        print 'keypoints num = ', keypoints_num
+        path_length = 0
+        for i in range(keypoints_num - 1):
+            path_length += np.linalg.norm( poses[i,:3] - poses[i+1,:3])
+        path_time = path_length / vel 
+        print 'Total path time : ', path_time, "s,  path length", path_length,'m'
+        sample_freq = 20  # 20Hz
+        joint_seed = self.q
+        if not self._stop:
+            for i in range(keypoints_num-1):
+                path_i =  np.linalg.norm( poses[i,:3] - poses[i+1,:3])
+                # print(path_i)
+                sample_num = int(path_i / vel * sample_freq +1)
+                rospy.loginfo("start to go the " + str(i+1)+  "-th point: " + " x="+str(poses[i+1,0]) + " y="+str(poses[i+1,1])
+                            + " z="+str(poses[i+1,3])+" time: " + str(path_i / vel) +"s")
+                if intepolation=='linear':
+                    pos = np.concatenate((np.linspace(poses[i,0],poses[i+1,0], num=sample_num).reshape(-1,1),
+                                        np.linspace(poses[i,1],poses[i+1,1], num=sample_num).reshape(-1,1),
+                                        np.linspace(poses[i,2],poses[i+1,2], num=sample_num).reshape(-1,1) ), axis=1)                # print 
+                ori = self.slerp(poses[i,3:], poses[i+1,3:] , np.array(range(sample_num+1), dtype=np.float)/sample_num    )
+                # print pos
+                # print ori
+                for j in range(sample_num):
+                    target_x = np.concatenate((pos[j,:], ori[j,:])   )
+                    self.move_to_frame(target_x, 1./sample_freq  )
+                    rospy.sleep(1./sample_freq)
+
+
+
+
+
+
+
         return True
 
 
