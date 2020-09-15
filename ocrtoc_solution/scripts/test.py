@@ -13,7 +13,7 @@ from trac_ik_python.trac_ik import IK
 ## - 
 rospy.init_node('test_motion_control')
 
-ur = rc.Robot( base_link ="table", tip_link = "robotiq_2f_85_ee_link" )
+ur = rc.Robot( base_link ="world", tip_link = "robotiq_2f_85_ee_link" )
 # ur = rc.Robot( base_link ="base_link", tip_link = "robotiq_2f_85_ee_link" )
 obj = rc.objects()
 # ik_solver.
