@@ -170,6 +170,12 @@ class Robot(object):
         p = np.array([ 1.55986781, -2.1380509 ,  2.49498554, -1.93086818, -1.5671494 , 0])
         self.move_to_joint(p,t)
 
+
+    def getpose_home(self, t=10):
+        p = np.array([ 1.55986781, -2.1380509 ,  1.5, -1.93086818, -1.5671494 , 0])
+        self.move_to_joint(p,t)
+
+
     def sin_test(self, delta_z = 0.2, T = 20.):
         # sin movement test, z = A*sin(w*t)
         
@@ -408,8 +414,10 @@ class Objects(object):
 if __name__ == '__main__':
     robot=Robot(init_node=True)
     robot.home(3)
-    objects=Objects(get_pose_from_gazebo=True)#从Gazebo中获取Pose
+    objects=Objects(get_pose_from_gazebo=False)#从Gazebo中获取Pose
     while not rospy.is_shutdown():
+        robot.getpose_home()
+        print("Ready to get the picture")
         objects.get_pose()
         for i,pose in enumerate(objects.x):
             robot.home(t=3)
@@ -421,9 +429,9 @@ if __name__ == '__main__':
             upper_pose[2]=upper_pose[2]+0.2#抬高30cm
             print("Traget is {},it's Pose is {}".format(objects.names[i],pose))
             #从上往下进行抓取
-            robot.motion_generation(upper_pose[np.newaxis,:])
+            robot.motion_generation(upper_pose[np.newaxis,:],vel=1.0)
             robot.motion_generation(grasp_pose[np.newaxis,:])
-            robot.motion_generation(upper_pose[np.newaxis,:])
+            robot.motion_generation(upper_pose[np.newaxis,:],vel=1.0)
             print("Move to {}".format(objects.names[i]))
         break
 

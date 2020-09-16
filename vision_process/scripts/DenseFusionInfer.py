@@ -327,6 +327,13 @@ class DenseFusion_Detector:
 
                 my_r = pred_r[0][which_max[0]].view(-1).cpu().data.numpy()
                 my_t = (points + pred_t)[which_max[0]].view(-1).cpu().data.numpy()
+
+
+                #在这里尝试改变四元数顺序,看看能不能解决问题
+                # my_r=np.array([my_r[3],my_r[]])
+                #在这里尝试改变四元数顺序,看看能不能解决问题
+
+
                 save_result_list.append({'object_id':object_id,'rot':my_r,'trans':my_t})
             except:
                 print("[warning],DenseFusion Detect Failed")
@@ -428,10 +435,14 @@ class DenseFusion_Detector:
             pose.position.x=trans[0]
             pose.position.y=trans[1]
             pose.position.z=trans[2]
-            pose.orientation.x=rot[0]
-            pose.orientation.y=rot[1]
-            pose.orientation.z=rot[2]
-            pose.orientation.w=rot[3]
+            # pose.orientation.x=rot[0]
+            # pose.orientation.y=rot[1]
+            # pose.orientation.z=rot[2]
+            # pose.orientation.w=rot[3]
+            pose.orientation.x=rot[1]
+            pose.orientation.y=rot[2]
+            pose.orientation.z=rot[3]
+            pose.orientation.w=rot[0]
             poses_list.append(pose)
         return object_id_list,poses_list
 
@@ -492,7 +503,6 @@ class DenseFusion_Detector:
 
         return dist,rot_dist
 
-
     def check_densefusion(self,scene_id="1-1"):
         """
         这里面用于确定DenseFusion的姿态识别和目标的姿态识别之间的差距
@@ -548,9 +558,9 @@ class DenseFusion_Detector:
 
 if __name__ == '__main__':
     densefusion_Detector=DenseFusion_Detector(init_node=True)
-    densefusion_Detector.check_densefusion("1-1")
-    densefusion_Detector.see_detect_result()#用于查看这个场景的结果
-    # densefusion_Detector.pub_pose_array()
+    # densefusion_Detector.check_densefusion("1-1")
+    # densefusion_Detector.see_detect_result()#用于查看这个场景的结果
+    densefusion_Detector.pub_pose_array()
     # densefusion_Detector.see_detect_result()#用于查看这个场景的结果
 
 
