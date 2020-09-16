@@ -479,16 +479,16 @@
 		</link>
 
 		<gazebo reference="${name}_right_pad">
-			<kp>1000000.0</kp>
-			<kd>1.0</kd>
+			<kp>10000.0</kp>
+			<kd>20.0</kd>
 			<mu1>100.0</mu1>
 			<mu2>100.0</mu2>
 			<minDepth>0.003</minDepth>
 		</gazebo>
 
 		<gazebo reference="${name}_left_pad">
-			<kp>1000000.0</kp>
-			<kd>1.0</kd>
+			<kp>10000.0</kp>
+			<kd>20.0</kd>
 			<mu1>100.0</mu1>
 			<mu2>100.0</mu2>
 			<minDepth>0.003</minDepth>
