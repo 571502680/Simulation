@@ -408,8 +408,7 @@ class Objects(object):
 if __name__ == '__main__':
     robot=Robot(init_node=True)
     robot.home(3)
-    objects=Objects(get_pose_from_gazebo=True)
-
+    objects=Objects(get_pose_from_gazebo=True)#从Gazebo中获取Pose
     while not rospy.is_shutdown():
         objects.get_pose()
         for i,pose in enumerate(objects.x):
@@ -417,7 +416,7 @@ if __name__ == '__main__':
             name=objects.names[i]
             if name=='robot' or name=="ground":
                 continue
-            grasp_pose=robot.get_pickpose_from_pose(pose)
+            grasp_pose=robot.get_pickpose_from_pose(pose)#Z轴翻转获取物体的抓取Pose
             upper_pose=grasp_pose.copy()
             upper_pose[2]=upper_pose[2]+0.2#抬高30cm
             print("Traget is {},it's Pose is {}".format(objects.names[i],pose))

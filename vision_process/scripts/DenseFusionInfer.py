@@ -37,7 +37,9 @@ from DenseFusion_Lib.transformations import quaternion_matrix,quaternion_from_ma
 from SegNet_Lib.segnet import SegNet
 
 class DenseFusion_Detector:
-    def __init__(self,model_path=None,refine_model_path=None,segnet_path=None):
+    def __init__(self,model_path=None,refine_model_path=None,segnet_path=None,init_node=False):
+        rospy.init_node("DenseFusionInfer")
+
         #1:导入网络
         if model_path is None:
             self.model_path="DenseFusion_Lib/pose_model_1_0.04200344247743487.pth"
@@ -124,6 +126,8 @@ class DenseFusion_Detector:
                                      [ 0.        ,  0.        ,  0.        ,  1.        ]])
 
 
+
+
     ###################################SegNet的使用#######################################
     def segnet_infer(self,bgr_image):
         """
@@ -145,7 +149,7 @@ class DenseFusion_Detector:
     def generate_kernel(self,x,y):
         return np.ones((x,y),np.uint8)
 
-    def process_segnet_result(self,label_image):
+    def process_segnet_result(self,label_image,debug=False):
         """
         解析label_image,从一个
         @param label_image:
@@ -155,6 +159,12 @@ class DenseFusion_Detector:
         for index in range(label_image.shape[2]):
             mask=label_image[:,:,index]
             sum_mask=np.sum(mask>0)
+
+            if debug:
+                print("sum_mask is",sum_mask)
+                cv.imshow("mask",label_image[:,:,index])
+                cv.waitKey(0)
+
             if sum_mask<1500 or index==0:
                 label_image[:,:,index]=0#如果这一层的pixel数目不够多,则全部变为0
             else:#认为是目标图片,先做形态学闭操作填充内部,再做形态学开操作,滤掉周围零星点
@@ -173,7 +183,7 @@ class DenseFusion_Detector:
         @return:语义分割之后的结果,输出size和bgr_image相同,但是Channel=1,像素中,多少值即对应了多少的像素
         """
         label_image=self.segnet_infer(bgr_image)
-        mask_result=self.process_segnet_result(label_image)
+        mask_result=self.process_segnet_result(label_image,debug=False)
         return mask_result
 
     ###################################DenseFusion的使用#######################################
@@ -367,7 +377,7 @@ class DenseFusion_Detector:
         @return:
         """
         make_Data=Make_Data.Make_Data()
-        rospy.init_node("DenseFusionInfer")
+
         rate=rospy.Rate(10)
         densefusion_Detector=DenseFusion_Detector()
         with torch.no_grad():
@@ -431,7 +441,6 @@ class DenseFusion_Detector:
         @return:
         """
         make_Data=Make_Data.Make_Data()
-        rospy.init_node("PosePublisher")
         poses_pub=rospy.Publisher("/poseinworld",ModelStates)
 
         rate=rospy.Rate(10)
@@ -452,9 +461,10 @@ class DenseFusion_Detector:
                 rate.sleep()
 
 if __name__ == '__main__':
-    densefusion_Detector=DenseFusion_Detector()
+    densefusion_Detector=DenseFusion_Detector(init_node=True)
+    # densefusion_Detector.see_detect_result()#用于查看这个场景的结果
     densefusion_Detector.pub_pose_array()
-    #densefusion_Detector.see_detect_result()#用于查看这个场景的结果
+    # densefusion_Detector.see_detect_result()#用于查看这个场景的结果
 
 
 
