@@ -26,10 +26,11 @@ from torch.autograd import Variable
 import rospy
 from geometry_msgs.msg import Pose
 from gazebo_msgs.msg import ModelStates
-
-
+import tf.transformations as trans_tools
+import math
 sys.path.append("/root/ocrtoc_ws/src/vision_process/scripts")
 import Make_Data
+import Read_Data
 #DenseFusion库
 from DenseFusion_Lib.network import PoseNet,PoseRefineNet
 from DenseFusion_Lib.transformations import quaternion_matrix,quaternion_from_matrix,euler_from_quaternion
@@ -124,9 +125,6 @@ class DenseFusion_Detector:
                                      [-0.14367474, -0.98843452, -0.04852593,  0.13329369],
                                      [-0.77253944,  0.08137731,  0.62973054,  0.58269   ],
                                      [ 0.        ,  0.        ,  0.        ,  1.        ]])
-
-
-
 
     ###################################SegNet的使用#######################################
     def segnet_infer(self,bgr_image):
@@ -345,10 +343,12 @@ class DenseFusion_Detector:
                 Pose_Matrix[0:3,3]=trans.T
                 origin_cloud=o3d.geometry.PointCloud()
                 origin_cloud.points=o3d.utility.Vector3dVector(self.object_points[object_id])
-
                 origin_cloud.transform(Pose_Matrix)
+                axis_point=o3d.geometry.TriangleMesh.create_coordinate_frame(size=0.1)
+                axis_point.transform(Pose_Matrix)
 
                 show_points.append(origin_cloud)
+                show_points.append(axis_point)
             cv.waitKey(0)
             o3d.visualization.draw_geometries(show_points)
 
@@ -460,10 +460,97 @@ class DenseFusion_Detector:
                     print('[Warning] color_image not exist')
                 rate.sleep()
 
+    ###################################进行DenseFusion精度确定#######################################
+    def compare_pose(self,true_pose,pose):
+        """
+        用于比较两个pose的差距
+        @param true_pose:
+        @param pose:
+        @return:
+        """
+        true_trans=np.array([true_pose.position.x,true_pose.position.y,true_pose.position.z])
+        predict_trans=np.array([pose.position.x,pose.position.y,pose.position.z])
+        dist=np.sqrt(np.sum(np.square(true_trans-predict_trans)))
+
+        true_rot=np.array([true_pose.orientation.x,true_pose.orientation.y,true_pose.orientation.z,true_pose.orientation.w])
+        predict_rot=np.array([pose.orientation.x,pose.orientation.y,pose.orientation.z,pose.orientation.w])
+
+        # true_rot=np.array([true_pose.orientation.w,true_pose.orientation.x,true_pose.orientation.y,true_pose.orientation.z])
+        # predict_rot=np.array([pose.orientation.w,pose.orientation.x,pose.orientation.y,pose.orientation.z])
+
+        true_rot_rpy=np.array(trans_tools.euler_from_quaternion(true_rot))*180/math.pi
+        predict_rot_rpy=np.array(trans_tools.euler_from_quaternion(predict_rot))*180/math.pi
+
+        print("true_trans:   ",true_trans)
+        print("preidct_trans:",predict_trans)
+        print("true rot rpy: ",true_rot_rpy)
+        print("predict rotrpy",predict_rot_rpy)
+
+        rot_dist=np.arccos(np.abs(true_rot.dot(predict_rot.T)))
+
+        # rot_dist=np.sqrt(np.sum(np.square(true_rot-predict_rot)))
+
+        return dist,rot_dist
+
+
+    def check_densefusion(self,scene_id="1-1"):
+        """
+        这里面用于确定DenseFusion的姿态识别和目标的姿态识别之间的差距
+        @param scene_id: 场景id,默认为1-1
+        @return:
+        """
+        read_Data=Read_Data.Read_Data()
+        make_Data=Make_Data.Make_Data()
+        #获取Gazebo中读取的Pose
+        world_info_list=read_Data.get_world_info(scene_id=scene_id)
+
+        #获取DenseFusion中识别的Pose
+        rate=rospy.Rate(10)
+        densefusion_Detector=DenseFusion_Detector()
+        with torch.no_grad():
+            while not rospy.is_shutdown():
+                make_Data.get_images()
+                if make_Data.color_image is not None and make_Data.depth_image is not None:
+                    pose_results=densefusion_Detector.get_pose(make_Data.color_image,make_Data.depth_image)
+                    poseinworld_result=self.get_worldframe_pose(pose_results)
+                    objecd_id_list,poses_list=self.get_pubinfo(poseinworld_result)
+                    #比较之后得到结果就进行下一个场景,也跑一个auto_run进行解决
+                    break
+                else:
+                    print('[Warning] color_image not exist')
+                rate.sleep()
+
+        #两个进行对比,从而知道结果
+        #基于世界信息进行获取
+        average_dist=0
+        average_rot_dist=0
+        for true_data in world_info_list:
+            object_name=true_data['true_name']
+            true_pose=true_data['model_pose']
+            gazebo_name=true_data['gazebo_name']
+            print("************ {}----{} pose***************".format(object_name,gazebo_name))
+            try:
+                index=objecd_id_list.index(object_name)
+            except:
+                print("[Warning] the SegNet detect wrong of"+object_name)
+                continue
+
+            pose=poses_list[index]
+            dist,rot_dist=self.compare_pose(true_pose,pose)
+            average_dist=average_dist+dist
+            average_rot_dist=average_rot_dist+rot_dist
+            # print("XYZ dist is",dist)
+            # print("Rot dist is",rot_dist)
+
+        # print("average_dist:",average_dist/len(world_info_list))
+        # print("average_rot_dist",average_rot_dist/len(world_info_list))
+
+
 if __name__ == '__main__':
     densefusion_Detector=DenseFusion_Detector(init_node=True)
-    # densefusion_Detector.see_detect_result()#用于查看这个场景的结果
-    densefusion_Detector.pub_pose_array()
+    densefusion_Detector.check_densefusion("1-1")
+    densefusion_Detector.see_detect_result()#用于查看这个场景的结果
+    # densefusion_Detector.pub_pose_array()
     # densefusion_Detector.see_detect_result()#用于查看这个场景的结果
 
 
