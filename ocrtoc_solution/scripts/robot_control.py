@@ -3,6 +3,8 @@
 
 import rospy
 import numpy as np
+import time
+import math
 from trac_ik_python.trac_ik import IK
 from urdf_parser_py.urdf import URDF
 from kdl_parser import kdl_tree_from_urdf_model
@@ -14,12 +16,8 @@ from gazebo_msgs.msg  import ModelStates
 from control_msgs.msg import GripperCommandActionGoal
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 from std_msgs.msg import Float64MultiArray
-
 import quaternion
-
 from kdl_conversions import *
-
-
 #transform
 import tf.transformations as trans_tools
 
@@ -75,7 +73,13 @@ class Robot(object):
                [  0.00000000e+00,   0.00000000e+00,   0.00000000e+00,
                   1.00000000e+00]])
 
+        #绕x轴的旋转180度矩阵
+        self.trans_x180Matrix=np.array([[1,0,0,0],
+                                      [0,-1,0,0],
+                                      [0,0,-1,0],
+                                      [0,0,0,1]])
 
+    #####################################机械臂控制接口##############################
     def forward_kinematics(self, q):
         # input q , numpy array (6,)
         # return [px,py,pz,qx,qy,qz,qw]
@@ -212,18 +216,21 @@ class Robot(object):
         s1 = sin_theta / sin_theta_0
         return (s0[:,np.newaxis] * v0[np.newaxis,:]) + (s1[:,np.newaxis] * v1[np.newaxis,:])
         
-    def motion_generation(self, poses, vel=0.02, intepolation='linear'):
+    def motion_generation(self, poses, vel=0.2, intepolation='linear',debug=False):
         # poses : (n,7) array, n: num of viapoints. [position, quaternion]
         poses = np.concatenate([self.x.reshape(1,-1), poses],axis=0) # add current points
         keypoints_num = poses.shape[0]
-        print poses[:,:3]
 
-        print 'keypoints num = ', keypoints_num
         path_length = 0
         for i in range(keypoints_num - 1):
             path_length += np.linalg.norm( poses[i,:3] - poses[i+1,:3])
-        path_time = path_length / vel 
-        print 'Total path time : ', path_time, "s,  path length", path_length,'m'
+        path_time = path_length / vel
+
+        if debug:
+            print poses[:,:3]
+            print 'keypoints num = ', keypoints_num
+            print 'Total path time : ', path_time, "s,  path length", path_length,'m'
+
         sample_freq = 20  # 20Hz
         joint_seed = self.q
         if not self._stop:
@@ -231,21 +238,23 @@ class Robot(object):
                 path_i =  np.linalg.norm( poses[i,:3] - poses[i+1,:3])
                 # print(path_i)
                 sample_num = int(path_i / vel * sample_freq +1)
-                rospy.loginfo("start to go the " + str(i+1)+  "-th point: " + " x="+str(poses[i+1,0]) + " y="+str(poses[i+1,1])
+
+                if debug:
+                    print(path_i)
+                    rospy.loginfo("start to go the " + str(i+1)+  "-th point: " + " x="+str(poses[i+1,0]) + " y="+str(poses[i+1,1])
                             + " z="+str(poses[i+1,3])+" time: " + str(path_i / vel) +"s")
                 if intepolation=='linear':
                     pos = np.concatenate((np.linspace(poses[i,0],poses[i+1,0], num=sample_num).reshape(-1,1),
                                         np.linspace(poses[i,1],poses[i+1,1], num=sample_num).reshape(-1,1),
                                         np.linspace(poses[i,2],poses[i+1,2], num=sample_num).reshape(-1,1) ), axis=1)                # print 
                 ori = self.slerp(poses[i,3:], poses[i+1,3:] , np.array(range(sample_num+1), dtype=np.float)/sample_num    )
-                # print pos
-                # print ori
                 for j in range(sample_num):
                     target_x = np.concatenate((pos[j,:], ori[j,:])   )
                     self.move_to_frame(target_x, 1./sample_freq  )
                     rospy.sleep(1./sample_freq)
         return True
 
+    #####################################抓取任务执行##############################
     def transform_world2base(self,world_pose):
         """
         Transform the pose in world frame to baselink frame
@@ -261,6 +270,24 @@ class Robot(object):
 
         base_pose=np.hstack([trans,rot])
         return base_pose
+
+    def get_pickpose_from_pose(self,pose):
+        """
+        送入物体pose,获取所对应的抓取pose
+        直接认为抓取pose就是物体朝向反过来即可
+        之后还需要注意,如果物体的朝向是向下的,则从背面抓取(这个先不解决)
+        :param pose:直接乘上一个围绕x轴转180度的变换矩阵即可(当然也可以顺着y轴,但是先不管y轴)
+        :return:
+        """
+        pose_Matrix=trans_tools.quaternion_matrix(pose[3:])
+        pose_Matrix[0:3,3]=np.array(pose[:3].T)
+
+        #乘上变换矩阵
+        grasp_Matrix=pose_Matrix.dot(quaternion.euler_matrix(0,math.pi,0))
+        rot=trans_tools.quaternion_from_matrix(grasp_Matrix)
+        trans=grasp_Matrix[0:3,3].T
+        converted_pose=np.hstack([trans,rot])
+        return converted_pose
 
     @property
     def x(self):
@@ -378,22 +405,28 @@ class Objects(object):
                 print("[Warning],can't get the pose")
             rate.sleep()
 
-
-
 if __name__ == '__main__':
     robot=Robot(init_node=True)
     robot.home(3)
-    objects=Objects(get_pose_from_gazebo=False)
-    #
-    # while not  rospy.is_shutdown():
-    #     robot.home(3)
+    objects=Objects(get_pose_from_gazebo=True)
+
     while not rospy.is_shutdown():
         objects.get_pose()
         for i,pose in enumerate(objects.x):
             robot.home(t=3)
-            print("Target Pose is:",pose)
-            robot.move_to_frame(pose,3)
+            name=objects.names[i]
+            if name=='robot' or name=="ground":
+                continue
+            grasp_pose=robot.get_pickpose_from_pose(pose)
+            upper_pose=grasp_pose.copy()
+            upper_pose[2]=upper_pose[2]+0.2#抬高30cm
+            print("Traget is {},it's Pose is {}".format(objects.names[i],pose))
+            #从上往下进行抓取
+            robot.motion_generation(upper_pose[np.newaxis,:])
+            robot.motion_generation(grasp_pose[np.newaxis,:])
+            robot.motion_generation(upper_pose[np.newaxis,:])
             print("Move to {}".format(objects.names[i]))
+        break
 
 
 
