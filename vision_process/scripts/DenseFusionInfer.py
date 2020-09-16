@@ -321,7 +321,7 @@ class DenseFusion_Detector:
                 my_t = (points + pred_t)[which_max[0]].view(-1).cpu().data.numpy()
                 save_result_list.append({'object_id':object_id,'rot':my_r,'trans':my_t})
             except:
-                print("[warning],Can not get ojbect{} Pose from DenseFusion")
+                print("[warning],DenseFusion Detect Failed")
 
 
         if debug:
@@ -342,7 +342,7 @@ class DenseFusion_Detector:
             cv.waitKey(0)
             o3d.visualization.draw_geometries(show_points)
 
-
+        print("DenseFuison Detect Success")
         return save_result_list
 
     def get_pose(self,bgr_image,depth_image,debug=False):

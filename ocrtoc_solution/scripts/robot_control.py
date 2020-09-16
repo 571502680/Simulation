@@ -15,12 +15,13 @@ from control_msgs.msg import GripperCommandActionGoal
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 from std_msgs.msg import Float64MultiArray
 
-
-
 import quaternion
 
 from kdl_conversions import *
 
+
+#transform
+import tf.transformations as trans_tools
 
 class Robot(object):
     def __init__(self, init_node=False, node_name='test', base_link ="world", tip_link = "robotiq_2f_85_ee_link"):
@@ -63,7 +64,16 @@ class Robot(object):
         self.joint_cmd_pub = rospy.Publisher(
             rospy.resolve_name('arm_controller/command'),
             JointTrajectory, queue_size=10)
-        
+
+        #transform world to base
+        self.trans_world2base=np.array([[  7.96326711e-04,  -9.99999683e-01,   0.00000000e+00,
+                  0.00000000e+00],
+               [  9.99999683e-01,   7.96326711e-04,   0.00000000e+00,
+                  2.40000000e-01],
+               [  0.00000000e+00,   0.00000000e+00,   1.00000000e+00,
+                  5.00000000e-03],
+               [  0.00000000e+00,   0.00000000e+00,   0.00000000e+00,
+                  1.00000000e+00]])
 
 
     def forward_kinematics(self, q):
@@ -109,7 +119,6 @@ class Robot(object):
         self._x, self._J = self.forward_kinematics(self._q)
         self._dx = np.dot(self._J, self._dq.reshape(-1,1)).flatten()
         self._p = quaternion.matrix_from_quaternion(self._x[3:], pos =self._x[:3])
-    
 
     # motion planning
     def move_to_joint(self, joint, t):
@@ -138,7 +147,7 @@ class Robot(object):
         q1.time_from_start = rospy.Duration(t)
         joint_cmd.points.append(q1)
         self.joint_cmd_pub.publish(joint_cmd)
-        # rospy.sleep(t)
+        rospy.sleep(t)
 
     def move_to_frame(self, x, t,seed=None):
         # x [x,y,z, qx, qy, qz, qw,]
@@ -154,10 +163,8 @@ class Robot(object):
             self.move_to_joint(qd, t )
 
     def home(self, t=10):
-
-        p = np.array([ 1.55986781, -2.1380509 ,  2.49498554, -1.93086818, -1.5671494 , -0.00523367])
+        p = np.array([ 1.55986781, -2.1380509 ,  2.49498554, -1.93086818, -1.5671494 , 0])
         self.move_to_joint(p,t)
-
 
     def sin_test(self, delta_z = 0.2, T = 20.):
         # sin movement test, z = A*sin(w*t)
@@ -176,8 +183,6 @@ class Robot(object):
 
 
         return True
-
-    import numpy as np
 
     def slerp(self, v0, v1, t_array):
         """Spherical linear interpolation."""
@@ -241,6 +246,22 @@ class Robot(object):
                     rospy.sleep(1./sample_freq)
         return True
 
+    def transform_world2base(self,world_pose):
+        """
+        Transform the pose in world frame to baselink frame
+        :param world_pose: world_pose[x,y,z,qx,qy,qz,qw]
+        :return:baselink_pose
+        """
+        worldpose_Matrix=trans_tools.quaternion_matrix(world_pose[3:])
+        worldpose_Matrix[0:3,3]=np.array(world_pose[:3]).T
+
+        basepose_Matrix=self.trans_world2base.dot(worldpose_Matrix)
+        rot=trans_tools.quaternion_from_matrix(basepose_Matrix)
+        trans=basepose_Matrix[0:3,3].T
+
+        base_pose=np.hstack([trans,rot])
+        return base_pose
+
     @property
     def x(self):
         """
@@ -264,6 +285,7 @@ class Robot(object):
         :return: [q ] (7,)
         """
         return self._dq
+
     @property
     def dx(self):
         """
@@ -276,7 +298,6 @@ class Robot(object):
 
         return self._dx
 
-
     @property
     def J(self):
         """
@@ -284,6 +305,7 @@ class Robot(object):
         :return:  (6, 7)
         """
         return self._J
+
     @property
     def p(self):
         """
@@ -295,8 +317,8 @@ class Robot(object):
 
         return self._p
 
-class objects(object):
-    def __init__(self, init_node = True,get_pose_from_gazebo=False):
+class Objects(object):
+    def __init__(self, init_node = False,get_pose_from_gazebo=False):
         """
         获取物体姿态参数
         :param init_node:初始化node
@@ -339,15 +361,19 @@ class objects(object):
         """
         return self._names
 
-    def get_pose(self):
+    def get_pose(self,debug=False):
         rate=rospy.Rate(10)
         while not rospy.is_shutdown():
             if self._x is not None:
-                print("object_name is:")
-                print(self._names)
-                print ("Pose is")
-                print(self._x)
-
+                if debug:
+                    print("object_name is:")
+                    print(self._names)
+                    print ("Pose is")
+                    print(self._x)
+                    break
+                else:
+                    print("Already Updata Objects Pose")
+                    break
             else:
                 print("[Warning],can't get the pose")
             rate.sleep()
@@ -355,8 +381,20 @@ class objects(object):
 
 
 if __name__ == '__main__':
-    read_ojbects=objects(init_node=True,get_pose_from_gazebo=True)
-    read_ojbects.get_pose()#测试函数,获取对应的pose
+    robot=Robot(init_node=True)
+    robot.home(3)
+    objects=Objects(get_pose_from_gazebo=False)
+    #
+    # while not  rospy.is_shutdown():
+    #     robot.home(3)
+    while not rospy.is_shutdown():
+        objects.get_pose()
+        for i,pose in enumerate(objects.x):
+            robot.home(t=3)
+            print("Target Pose is:",pose)
+            robot.move_to_frame(pose,3)
+            print("Move to {}".format(objects.names[i]))
+
 
 
 

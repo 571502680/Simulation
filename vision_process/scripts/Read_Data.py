@@ -31,7 +31,6 @@ class Read_YCB:
     """
     def __init__(self):
         self.classes_file_path=python_path+"/classes.txt"
-        self.root=python_path+"/../ALi_dataset"
         self.objects_points={}
         self.objects_names=['a_cups', 'a_lego_duplo', 'a_toy_airplane', 'adjustable_wrench', 'b_cups', 'b_lego_duplo', 'b_toy_airplane', 'banana', 'bleach_cleanser', 'bowl', 'bowl_a', 'c_cups', 'c_lego_duplo', 'c_toy_airplane', 'cracker_box', 'cup_small', 'd_cups', 'd_lego_duplo', 'd_toy_airplane', 'e_cups', 'e_lego_duplo', 'e_toy_airplane', 'extra_large_clamp', 'f_cups', 'f_lego_duplo', 'flat_screwdriver', 'foam_brick', 'fork', 'g_cups', 'g_lego_duplo', 'gelatin_box', 'h_cups', 'hammer', 'i_cups', 'j_cups', 'jenga', 'knife', 'large_clamp', 'large_marker', 'master_chef_can', 'medium_clamp', 'mug', 'mustard_bottle', 'nine_hole_peg_test', 'pan_tefal', 'phillips_screwdriver', 'pitcher_base', 'plate', 'potted_meat_can', 'power_drill', 'prism', 'pudding_box', 'rubiks_cube', 'scissors', 'spoon', 'sugar_box', 'tomato_soup_can', 'tuna_fish_can', 'wood_block']
         self.get_objects_points(self.classes_file_path)#这里进行self.objects_points的填充
@@ -77,7 +76,7 @@ class Read_YCB:
             object_name=class_input[:-1]
             if not class_input:
                 break
-            points_file = open('{0}/models/{1}/collision_meshes/points.xyz'.format(self.root,object_name))
+            points_file = open(python_path+'/object_models/{}/points.xyz'.format(object_name))
             self.objects_points[object_name] = []
             while 1:
                 input_line = points_file.readline()
@@ -87,22 +86,6 @@ class Read_YCB:
                 self.objects_points[object_name].append([float(input_line[0]), float(input_line[1]), float(input_line[2])])
             self.objects_points[object_name] = np.array(self.objects_points[object_name])
             points_file.close()
-
-    def get_objects_points_from_obj(self,classes_file_path):
-        """
-        基于classes_file更新self.ojbects_points,但是这里面保存的是mesh文件,不是np.array文件
-        @param classes_file_path:
-        @return:
-        """
-        class_file = open(classes_file_path)
-        while 1:
-            class_input = class_file.readline()
-
-            if not class_input:
-                break
-            points=o3d.io.read_triangle_mesh('{0}/models/{1}/collision_meshes/collision.obj'.format(self.root, class_input[:-1]))
-
-            self.objects_points[class_input[:-1]]=points
 
 class Read_Data:
     def __init__(self):
@@ -303,7 +286,8 @@ class Read_Data:
         rot=None
         while not rospy.is_shutdown():
             try:
-                trans,rot=camera_listener.lookupTransform('kinect_camera_visor','world',rospy.Time(0))#获取到两个坐标系之间的关系
+                # trans,rot=camera_listener.lookupTransform('kinect_camera_visor','world',rospy.Time(0))#获取到两个坐标系之间的关系
+                trans,rot=camera_listener.lookupTransform('base_link','world',rospy.Time(0))#获取到两个坐标系之间的关系
                 self.Get_T_Matrix_Flag=True
             except :
                 print("[Warning] get trans and rot failed!")
