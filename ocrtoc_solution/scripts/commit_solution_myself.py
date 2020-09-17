@@ -1,5 +1,5 @@
 #! /usr/bin/env python
-
+#-*- coding: utf-8 -*-
 import actionlib
 import rospy
 
@@ -7,8 +7,9 @@ import ocrtoc_task.msg
 from control_msgs.msg import GripperCommandActionGoal
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 
-
-
+import numpy as np
+import time
+import robot_control
 
 
 class CommitSolution(object):
@@ -38,41 +39,62 @@ class CommitSolution(object):
         self.models_dir = materials_path + '/models'
         rospy.loginfo("Models dir: " + self.models_dir)
 
+
+    def process_goal_pose(self,goal_pose_list):
+        """
+        将送入的pose_list变换为可以解析的list
+        :param goal_pose_list: goal中的pose_list
+        :return:
+        """
+        return_pose_list=[]
+        for pose in goal_pose_list:
+            return_pose_list.append(np.array([pose.position.x,pose.position.y,pose.position.z,pose.orientation.x,pose.orientation.y,pose.orientation.z,pose.orientation.w]))
+        return return_pose_list
+
     def execute_callback(self, goal):
         rospy.loginfo("Get clean task.")
-        print(goal)
+        goal_object_list=goal.object_list
+        goal_pose_list=goal.pose_list
+        goal_pose_list=self.process_goal_pose(goal_pose_list)
 
-        ##### User code example starts #####
-        # In the following, an example is provided on how to use the predefined software APIs
-        # to get the target configuration, to control the robot, to set the actionlib result.
-        # Example: load model.
+        #导入场景
         rospy.loginfo("Load models")
         for object_name in goal.object_list:
             object_model_dir = self.models_dir + '/' + object_name
             rospy.loginfo("Object model dir: " + object_model_dir)
         rospy.sleep(1.0)
 
-        # Example: control ur5e by topic
-        arm_cmd = JointTrajectory()
-        arm_cmd.joint_names = ['shoulder_pan_joint', 'shoulder_lift_joint', \
-                               'elbow_joint', 'wrist_1_joint', \
-                               'wrist_2_joint', 'wrist_3_joint']
-        waypoint = JointTrajectoryPoint()
-        waypoint.positions = [-0.68, -0.63, 0.69, -0.88, -0.53, -0.19]
-        waypoint.time_from_start.secs = 2.0
-        arm_cmd.points.append(waypoint)
-        self.arm_cmd_pub.publish(arm_cmd)
-        rospy.loginfo("Pub arm_cmd")
-        rospy.sleep(1.0)
+        #获取目标场景中位置
+        robot=robot_control.Robot()
+        objects=robot_control.Objects(get_pose_from_gazebo=False)
+        while not rospy.is_shutdown():
+            print("Ready to Picking")
+            robot.getpose_home(1)
+            objects.get_pose()
+            robot.home(t=1)
+            for i,origin_pose in enumerate(objects.x):
+                #1:获取物体名称和物体目标位置
+                name=objects.names[i]
+                try:
+                    goal_index=goal_object_list.index(name)
+                    goal_pose=goal_pose_list[goal_index]
+                except:
+                    print("DenseFusion Don't detect {}".format(name))
+                    continue
 
-        # Example: control 2f85 by topic
-        gripper_cmd = GripperCommandActionGoal()
-        gripper_cmd.goal.command.position = 0.5
-        gripper_cmd.goal.command.max_effort = 0.0
-        self.gripper_cmd_pub.publish(gripper_cmd)
-        rospy.loginfo("Pub gripper_cmd")
-        rospy.sleep(1.0)
+                #2:抓取物体并运动到目标位置
+                print("Traget is {},it's Pose is {}".format(objects.names[i],origin_pose))
+                grasp_pose=robot.get_pickpose_from_pose(origin_pose)#Z轴翻转获取物体的抓取Pose
+                robot.gripper_control(angle=0,force=1)
+                robot.move_updown(grasp_pose,grasp=True)
 
+                #运动到目标位置并放下
+                robot.home(t=1)
+                place_pose=robot.get_pickpose_from_pose(goal_pose)
+                #只是用xyz,旋转角度使用grasp的角度
+                place_pose[3:]=grasp_pose[3:]
+                robot.move_updown(place_pose,grasp=False)
+            break
         # Example: set status "Aborted" and quit.
         if self.action_server.is_preempt_requested():
             self.result.status = "Aborted"

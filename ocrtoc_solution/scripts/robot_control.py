@@ -171,7 +171,12 @@ class Robot(object):
         p = np.array([ 1.55986781, -2.1380509 ,  2.49498554, -1.93086818, -1.5671494 , 0])
         self.move_to_joint(p,t)
 
-    def getpose_home(self, t=10):
+    def getpose_home(self, t=1):
+        """
+        DenseFusion获取抓取点的时候需要运动到这个位置,避免爪子出现在摄像头中
+        :param t:
+        :return:
+        """
         p = np.array([ 1.55986781, -2.1380509 ,  1.5, -1.93086818, -1.5671494 , 0])
         self.move_to_joint(p,t)
 
@@ -268,7 +273,6 @@ class Robot(object):
             rospy.loginfo("Pub gripper_cmd")
         rospy.sleep(1.0)
 
-
     #####################################抓取任务执行##############################
     def transform_world2base(self,world_pose):
         """
@@ -303,6 +307,25 @@ class Robot(object):
         trans=grasp_Matrix[0:3,3].T
         converted_pose=np.hstack([trans,rot])
         return converted_pose
+
+    def move_updown(self,pose,grasp=False):
+        """
+        从上方运动到物体的给定位置
+        :param pose:
+        :param grasp: 落下去后抓取或者释放
+        :return:
+        """
+        upper_pose=pose.copy()
+        upper_pose[2]=upper_pose[2]+0.25#抬高20cm
+        #从上往下运动
+        self.motion_generation(upper_pose[np.newaxis,:],vel=0.4)
+        self.motion_generation(pose[np.newaxis,:],vel=0.1)
+        if grasp:
+            self.gripper_control(angle=0.5,force=1)
+        else:
+            self.gripper_control(angle=0,force=1)
+        time.sleep(1)
+        self.motion_generation(upper_pose[np.newaxis,:],vel=0.1)
 
     @property
     def x(self):
@@ -458,7 +481,6 @@ def move_to_object():
             print("Move to {}".format(objects.names[i]))
         break
 
-
 def test_gripper():
     """
     这里面尝试进行物体抓取
@@ -484,14 +506,26 @@ def test_gripper():
             #从上往下进行抓取
             robot.gripper_control(angle=0,force=1)
             robot.motion_generation(upper_pose[np.newaxis,:],vel=0.4)
-            robot.motion_generation(grasp_pose[np.newaxis,:])
-            robot.gripper_control(angle=0.8,force=5)
+            robot.motion_generation(grasp_pose[np.newaxis,:],vel=0.2)
+            robot.gripper_control(angle=0.5,force=1)
+            time.sleep(1)
             robot.motion_generation(upper_pose[np.newaxis,:])
             print("Move to {}".format(objects.names[i]))
         break
 
+def move_home():
+    """
+    机械臂撞东西之后返回原来的状态
+    :return:
+    """
+    robot=Robot(init_node=True)
+    while not rospy.is_shutdown():
+        robot.getpose_home(3)
+        robot.home(t=1)
+
+
 if __name__ == '__main__':
-    test_gripper()
+    move_home()
 
 
 

@@ -453,7 +453,7 @@ class DenseFusion_Detector:
         @return:
         """
         make_Data=Make_Data.Make_Data()
-        poses_pub=rospy.Publisher("/poseinworld",ModelStates)
+        poses_pub=rospy.Publisher("/poseinworld",ModelStates,queue_size=10)
 
         rate=rospy.Rate(10)
         densefusion_Detector=DenseFusion_Detector()
