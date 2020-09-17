@@ -371,15 +371,18 @@ class Objects(object):
         else:
             self.DenseFuion_result_sub=rospy.Subscriber("/poseinworld",ModelStates,self.objects_state_cb,queue_size=10)
 
+        self.update_pose=False#用于决定是否更新Pose
+
     def objects_state_cb(self,data):
-        self._names = data.name
-        self._nums = len(self._names)
-        self._x = np.zeros([self._nums, 7])  #  (n,7) numpy array
-        for i in range(self._nums):
-            pose = data.pose[i]
-            self._x[i,:3] = np.array([pose.position.x, pose.position.y, pose.position.z ])
-            self._x[i,3:] = np.array([pose.orientation.x, pose.orientation.y, pose.orientation.z,
-                 pose.orientation.w ] )
+        if self.update_pose:#在获取位姿的时候为True,获取完成之后为False
+            self._names = data.name
+            self._nums = len(self._names)
+            self._x = np.zeros([self._nums, 7])  #  (n,7) numpy array
+            for i in range(self._nums):
+                pose = data.pose[i]
+                self._x[i,:3] = np.array([pose.position.x, pose.position.y, pose.position.z ])
+                self._x[i,3:] = np.array([pose.orientation.x, pose.orientation.y, pose.orientation.z,
+                     pose.orientation.w ] )
     @property
     def x(self):
         """
@@ -395,6 +398,8 @@ class Objects(object):
         return self._names
 
     def get_pose(self,debug=False):
+        self.update_pose=True
+        self._x=None#清除以前的x的Pose
         rate=rospy.Rate(10)
         while not rospy.is_shutdown():
             if self._x is not None:
@@ -411,17 +416,20 @@ class Objects(object):
                 print("[Warning],can't get the pose")
             rate.sleep()
 
+        self.update_pose=False
+
 if __name__ == '__main__':
     robot=Robot(init_node=True)
-    robot.home(3)
+    robot.getpose_home(3)
     objects=Objects(get_pose_from_gazebo=False)#从Gazebo中获取Pose
     while not rospy.is_shutdown():
         robot.getpose_home()
         print("Ready to get the picture")
         objects.get_pose()
         for i,pose in enumerate(objects.x):
-            robot.home(t=3)
+            robot.home(t=1)
             name=objects.names[i]
+            print("name is",name)
             if name=='robot' or name=="ground":
                 continue
             grasp_pose=robot.get_pickpose_from_pose(pose)#Z轴翻转获取物体的抓取Pose
@@ -429,9 +437,9 @@ if __name__ == '__main__':
             upper_pose[2]=upper_pose[2]+0.2#抬高30cm
             print("Traget is {},it's Pose is {}".format(objects.names[i],pose))
             #从上往下进行抓取
-            robot.motion_generation(upper_pose[np.newaxis,:],vel=1.0)
+            robot.motion_generation(upper_pose[np.newaxis,:],vel=0.4)
             robot.motion_generation(grasp_pose[np.newaxis,:])
-            robot.motion_generation(upper_pose[np.newaxis,:],vel=1.0)
+            robot.motion_generation(upper_pose[np.newaxis,:])
             print("Move to {}".format(objects.names[i]))
         break
 

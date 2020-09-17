@@ -435,6 +435,7 @@ class DenseFusion_Detector:
             pose.position.x=trans[0]
             pose.position.y=trans[1]
             pose.position.z=trans[2]
+            ####DenseFusion输出的rot的顺序是wxyz,但是ros中默认的顺序是xyzw######
             # pose.orientation.x=rot[0]
             # pose.orientation.y=rot[1]
             # pose.orientation.z=rot[2]
@@ -558,9 +559,9 @@ class DenseFusion_Detector:
 
 if __name__ == '__main__':
     densefusion_Detector=DenseFusion_Detector(init_node=True)
+    densefusion_Detector.pub_pose_array()
     # densefusion_Detector.check_densefusion("1-1")
     # densefusion_Detector.see_detect_result()#用于查看这个场景的结果
-    densefusion_Detector.pub_pose_array()
     # densefusion_Detector.see_detect_result()#用于查看这个场景的结果
 
 
