@@ -3,7 +3,7 @@
   <node name="DenseFusionInfer" pkg="vision_process" type="DenseFusionInfer.py" output="screen" ></node>
 
   <!-- run commit_solution actionlib server -->
-  <node name="commit_solution" pkg="ocrtoc_solution" type="commit_solution_myself.py" output="screen" >
+  <node name="commit_solution" pkg="ocrtoc_solution" type="commit_solution.py" output="screen" >
     <param name="materials_dir" value="/root/ocrtoc_materials"/>
   </node>
 
