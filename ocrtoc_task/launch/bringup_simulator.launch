@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <launch>
-  <arg name="gui" default="false" doc="Starts sapien gui" />
+  <arg name="gui" default="true" doc="Starts sapien gui" />
   <arg name="scene" default="1-1" doc="Scene id." />
   <arg name="simulator" default="gazebo" doc="Simulator to use." />
   <arg name="paused" default="false" doc="Starts simulator in paused mode" />
