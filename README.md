@@ -170,8 +170,8 @@ You are required to submit your solution by uploading a docker image to the [com
 - Remove your source code and leave the "catkin_make install" results in you docker image.
 - Your solution can be fully launched by the ocrtoc_solution/launch/commit_solution.launch
 
-
 **Submission example**
+
 ```
 # 1. Install anything you need in your docker image, such as pytorch.
 sudo docker exec -it ocrtoc_container bash
@@ -193,7 +193,7 @@ source /root/catkin_ws/install.setup.bash
 roslaunch ocrtoc_solution commit_solution.launch
 # In terminal 3
 sudo docker exec -it ocrtoc_container bash
-source /root/catkin_ws/install.setup.bash
+source /root/ocrtoc_ws/install.setup.bash
 roslaunch ocrtoc_task trigger_and_evaluation.launch simulator:=gazebo scene:=1-1
 
 # 4. Export a docker image by the docker container.

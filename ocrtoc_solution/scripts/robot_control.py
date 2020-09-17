@@ -28,6 +28,7 @@ class Robot(object):
         # robot state
         self._x, self._dx, self._q, self._dq = None, None, None, None
         self._J, self._p = None, None
+        self._reachable=True
         
         # gripper
         self._gripper_is_grasped = 0.
@@ -164,6 +165,7 @@ class Robot(object):
         qd = self.inverse_kinematics(x[:3],x[3:])
         if qd is None:
             rospy.logerr('qd is None, Inverse kinematics fail!!!')
+
         else:
             self.move_to_joint(qd, t )
 
