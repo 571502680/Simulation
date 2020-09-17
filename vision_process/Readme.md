@@ -6,6 +6,9 @@
 
      ```
      pip install torch==1.1.0 torchvision==0.2.0
+     pip install pyrsistent==0.15.6
+     pip intall open3d==0.8.0.0
+     pip install scipy pypng
      ```
 
      (其余包缺少时,注意要安装python2的版本)

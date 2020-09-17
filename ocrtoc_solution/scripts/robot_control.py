@@ -32,6 +32,7 @@ class Robot(object):
         # gripper
         self._gripper_is_grasped = 0.
         self._gripper_width = 0.07
+        self.gripper_cmd_pub=rospy.Publisher(rospy.resolve_name('gripper_controller/gripper_cmd/goal'),GripperCommandActionGoal,queue_size=10)
 
         # load robot kdl tree
         self._base_link = base_link
@@ -170,11 +171,9 @@ class Robot(object):
         p = np.array([ 1.55986781, -2.1380509 ,  2.49498554, -1.93086818, -1.5671494 , 0])
         self.move_to_joint(p,t)
 
-
     def getpose_home(self, t=10):
         p = np.array([ 1.55986781, -2.1380509 ,  1.5, -1.93086818, -1.5671494 , 0])
         self.move_to_joint(p,t)
-
 
     def sin_test(self, delta_z = 0.2, T = 20.):
         # sin movement test, z = A*sin(w*t)
@@ -259,6 +258,16 @@ class Robot(object):
                     self.move_to_frame(target_x, 1./sample_freq  )
                     rospy.sleep(1./sample_freq)
         return True
+
+    def gripper_control(self,angle,force,debug=False):
+        gripper_cmd=GripperCommandActionGoal()
+        gripper_cmd.goal.command.position=angle
+        gripper_cmd.goal.command.max_effort=force
+        self.gripper_cmd_pub.publish(gripper_cmd)
+        if debug:
+            rospy.loginfo("Pub gripper_cmd")
+        rospy.sleep(1.0)
+
 
     #####################################抓取任务执行##############################
     def transform_world2base(self,world_pose):
@@ -418,7 +427,13 @@ class Objects(object):
 
         self.update_pose=False
 
-if __name__ == '__main__':
+
+#####################################测试函数部分##############################
+def move_to_object():
+    """
+    这里面基于DenseFusion识别到的结果,运动到每个物体的旁边
+    :return:
+    """
     robot=Robot(init_node=True)
     robot.getpose_home(3)
     objects=Objects(get_pose_from_gazebo=False)#从Gazebo中获取Pose
@@ -443,6 +458,40 @@ if __name__ == '__main__':
             print("Move to {}".format(objects.names[i]))
         break
 
+
+def test_gripper():
+    """
+    这里面尝试进行物体抓取
+    :return:
+    """
+    robot=Robot(init_node=True)
+    robot.getpose_home(3)
+    objects=Objects(get_pose_from_gazebo=True)#从Gazebo中获取Pose
+    while not rospy.is_shutdown():
+        robot.getpose_home()
+        print("Ready to get the picture")
+        objects.get_pose()
+        for i,pose in enumerate(objects.x):
+            robot.home(t=1)
+            name=objects.names[i]
+            print("name is",name)
+            if name=='robot' or name=="ground":
+                continue
+            grasp_pose=robot.get_pickpose_from_pose(pose)#Z轴翻转获取物体的抓取Pose
+            upper_pose=grasp_pose.copy()
+            upper_pose[2]=upper_pose[2]+0.2#抬高30cm
+            print("Traget is {},it's Pose is {}".format(objects.names[i],pose))
+            #从上往下进行抓取
+            robot.gripper_control(angle=0,force=1)
+            robot.motion_generation(upper_pose[np.newaxis,:],vel=0.4)
+            robot.motion_generation(grasp_pose[np.newaxis,:])
+            robot.gripper_control(angle=0.8,force=5)
+            robot.motion_generation(upper_pose[np.newaxis,:])
+            print("Move to {}".format(objects.names[i]))
+        break
+
+if __name__ == '__main__':
+    test_gripper()
 
 
 
