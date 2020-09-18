@@ -1,16 +1,16 @@
 #! /usr/bin/env python
 #-*- coding: utf-8 -*-
-import actionlib
+#基础包
 import rospy
-
+import actionlib
+import numpy as np
+import time
+#通信接口定义
 import ocrtoc_task.msg
 from control_msgs.msg import GripperCommandActionGoal
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
-
-import numpy as np
-import time
+#自己包使用
 import robot_control
-
 
 class CommitSolution(object):
     def __init__(self, name):
