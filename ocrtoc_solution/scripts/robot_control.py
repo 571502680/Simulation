@@ -310,7 +310,7 @@ class Robot(object):
         converted_pose=np.hstack([trans,rot])
         return converted_pose
 
-    def move_updown(self,pose,grasp=False):
+    def move_updown(self,pose,grasp=False,fast_vel=0.4,slow_vel=0.1):
         """
         从上方运动到物体的给定位置
         :param pose:
@@ -318,16 +318,29 @@ class Robot(object):
         :return:
         """
         upper_pose=pose.copy()
-        upper_pose[2]=upper_pose[2]+0.25#抬高20cm
+        upper_pose[2]=upper_pose[2]+0.2#抬高20cm
         #从上往下运动
-        self.motion_generation(upper_pose[np.newaxis,:],vel=0.4)
-        self.motion_generation(pose[np.newaxis,:],vel=0.1)
+        self.motion_generation(upper_pose[np.newaxis,:],vel=fast_vel)
+        self.motion_generation(pose[np.newaxis,:],vel=slow_vel)
         if grasp:
+            # self.grasp_slowly(0.5,force=1)
             self.gripper_control(angle=0.5,force=1)
         else:
             self.gripper_control(angle=0,force=1)
         time.sleep(1)
-        self.motion_generation(upper_pose[np.newaxis,:],vel=0.1)
+        self.motion_generation(upper_pose[np.newaxis,:],vel=slow_vel)
+
+
+    def grasp_slowly(self,target_angle,force=0,points=20):
+        """
+        尝试一点点地缩小抓取范围,看看能不能抓上
+        :param target_angle: 目标角度
+        :return:
+        """
+        middle_angle=np.linspace(0,target_angle,num=points)
+        for angle in middle_angle:
+            self.gripper_control(angle,force)
+
 
     @property
     def x(self):
@@ -401,7 +414,8 @@ class Objects(object):
         ## todo, we need to do object localization by the cameras
         ## now, I use the Gazebo topic to get them in world frame.
         if get_pose_from_gazebo:
-            self.objects_state_sub = rospy.Subscriber("gazebo/model_states", ModelStates, self.objects_state_cb, queue_size=10)
+            # self.objects_state_sub = rospy.Subscriber("gazebo/model_states", ModelStates, self.objects_state_cb, queue_size=10)#读取gazebo信息
+            self.objects_state_sub = rospy.Subscriber("/sapien/get_model_state", ModelStates, self.objects_state_cb, queue_size=10)#读取sapien信息
         else:
             self.DenseFuion_result_sub=rospy.Subscriber("/poseinworld",ModelStates,self.objects_state_cb,queue_size=10)
 
@@ -453,6 +467,7 @@ class Objects(object):
         self.update_pose=False
 
 
+
 #####################################测试函数部分##############################
 def move_to_object():
     """
@@ -489,11 +504,10 @@ def test_gripper():
     :return:
     """
     robot=Robot(init_node=True)
-    robot.getpose_home(3)
     objects=Objects(get_pose_from_gazebo=True)#从Gazebo中获取Pose
     while not rospy.is_shutdown():
         robot.getpose_home()
-        print("Ready to get the picture")
+        print("Ready to get the Pose")
         objects.get_pose()
         for i,pose in enumerate(objects.x):
             robot.home(t=1)
@@ -501,19 +515,35 @@ def test_gripper():
             print("name is",name)
             if name=='robot' or name=="ground":
                 continue
+            print("Target Pose is",pose)
             grasp_pose=robot.get_pickpose_from_pose(pose)#Z轴翻转获取物体的抓取Pose
-            upper_pose=grasp_pose.copy()
-            upper_pose[2]=upper_pose[2]+0.2#抬高30cm
-            print("Traget is {},it's Pose is {}".format(objects.names[i],pose))
-            #从上往下进行抓取
-            robot.gripper_control(angle=0,force=1)
-            robot.motion_generation(upper_pose[np.newaxis,:],vel=0.4)
-            robot.motion_generation(grasp_pose[np.newaxis,:],vel=0.2)
-            robot.gripper_control(angle=0.5,force=1)
-            time.sleep(1)
-            robot.motion_generation(upper_pose[np.newaxis,:])
+
+            print("Grasp Pose is",grasp_pose)
+            robot.gripper_control(angle=0,force=0)
+            robot.move_updown(grasp_pose,grasp=True)
+            robot.home(t=1)
+            robot.move_updown(grasp_pose,grasp=False)
             print("Move to {}".format(objects.names[i]))
         break
+
+
+def test_sapien():
+    robot=Robot(init_node=True)
+    while not rospy.is_shutdown():
+        robot.getpose_home()
+        print("Ready to get the Pose")
+        robot.home(t=1)
+        #更改一下pose
+        pose=np.array([0.16,-0.14,0.01,0.48,0,0,0.87])
+        grasp_pose=robot.get_pickpose_from_pose(pose)#Z轴翻转获取物体的抓取Pose
+        print("Grasp Pose is",grasp_pose)
+        robot.gripper_control(angle=0,force=0)
+        robot.move_updown(grasp_pose,grasp=True)
+        robot.home(t=1)
+        robot.move_updown(grasp_pose,grasp=False)
+
+        break
+
 
 def move_home():
     """
@@ -527,7 +557,9 @@ def move_home():
 
 
 if __name__ == '__main__':
-    move_home()
+    test_sapien()
+    # test_gripper()
+    # move_home()
 
 
 

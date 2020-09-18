@@ -39,8 +39,8 @@ from SegNet_Lib.segnet import SegNet
 
 class DenseFusion_Detector:
     def __init__(self,model_path=None,refine_model_path=None,segnet_path=None,init_node=False):
-        rospy.init_node("DenseFusionInfer")
-
+        if init_node:
+            rospy.init_node("DenseFusionInfer")
         #1:导入网络
         if model_path is None:
             self.model_path="DenseFusion_Lib/pose_model_1_0.04200344247743487.pth"
@@ -174,14 +174,14 @@ class DenseFusion_Detector:
 
         return output_result
 
-    def get_bgr_mask(self,bgr_image):
+    def get_bgr_mask(self,bgr_image,debug=False):
         """
         送入bgr_image,得到语义分割的结果
         @param bgr_image:bgr图片
         @return:语义分割之后的结果,输出size和bgr_image相同,但是Channel=1,像素中,多少值即对应了多少的像素
         """
         label_image=self.segnet_infer(bgr_image)
-        mask_result=self.process_segnet_result(label_image,debug=False)
+        mask_result=self.process_segnet_result(label_image,debug=debug)
         return mask_result
 
     ###################################DenseFusion的使用#######################################
@@ -370,7 +370,7 @@ class DenseFusion_Detector:
         @return: pose_results:一个list,每个元素为一个dict,dict中包含'object_id','rot','trans'
         """
         #1:首选先产生labelimage
-        label_image=self.get_bgr_mask(bgr_image)
+        label_image=self.get_bgr_mask(bgr_image,debug=debug)
 
         #2:产生所有位置
         object_list=self.get_objectlist_from_labelimage(label_image)
@@ -378,20 +378,18 @@ class DenseFusion_Detector:
         pose_results=self.get_poses_withlabel(rgb_image,depth_image,label_image,object_list,debug=debug)
         return pose_results
 
-    def see_detect_result(self):
+    def see_detect_result(self,debug=False):
         """
         这里面用于看这个场景的识别结果
         @return:
         """
         make_Data=Make_Data.Make_Data()
-
         rate=rospy.Rate(10)
-        densefusion_Detector=DenseFusion_Detector()
         with torch.no_grad():
             while not rospy.is_shutdown():
                 make_Data.get_images()
                 if make_Data.color_image is not None and make_Data.depth_image is not None:
-                    pose_result=densefusion_Detector.get_pose(make_Data.color_image,make_Data.depth_image,debug=True)
+                    pose_result=self.get_pose(make_Data.color_image,make_Data.depth_image,debug=debug)
                     print("The result is:",pose_result)
                     break
                 else:
@@ -454,14 +452,12 @@ class DenseFusion_Detector:
         """
         make_Data=Make_Data.Make_Data()
         poses_pub=rospy.Publisher("/poseinworld",ModelStates,queue_size=10)
-
         rate=rospy.Rate(10)
-        densefusion_Detector=DenseFusion_Detector()
         with torch.no_grad():
             while not rospy.is_shutdown():
                 make_Data.get_images()
                 if make_Data.color_image is not None and make_Data.depth_image is not None:
-                    pose_results=densefusion_Detector.get_pose(make_Data.color_image,make_Data.depth_image)
+                    pose_results=self.get_pose(make_Data.color_image,make_Data.depth_image)
                     poseinworld_result=self.get_worldframe_pose(pose_results)
                     objecd_id_list,poses_list=self.get_pubinfo(poseinworld_result)
                     modelStates=ModelStates()
@@ -561,8 +557,8 @@ if __name__ == '__main__':
     densefusion_Detector=DenseFusion_Detector(init_node=True)
     densefusion_Detector.pub_pose_array()
     # densefusion_Detector.check_densefusion("1-1")
-    # densefusion_Detector.see_detect_result()#用于查看这个场景的结果
-    # densefusion_Detector.see_detect_result()#用于查看这个场景的结果
+    # densefusion_Detector.see_detect_result(debug=True)#用于查看这个场景的结果
+
 
 
 

@@ -75,6 +75,10 @@ class CommitSolution(object):
             for i,origin_pose in enumerate(objects.x):
                 #1:获取物体名称和物体目标位置
                 name=objects.names[i]
+                if name=="wood_block":
+                    pass
+                else:
+                    continue
                 try:
                     goal_index=goal_object_list.index(name)
                     goal_pose=goal_pose_list[goal_index]
@@ -86,14 +90,14 @@ class CommitSolution(object):
                 print("Traget is {},it's Pose is {}".format(objects.names[i],origin_pose))
                 grasp_pose=robot.get_pickpose_from_pose(origin_pose)#Z轴翻转获取物体的抓取Pose
                 robot.gripper_control(angle=0,force=1)
-                robot.move_updown(grasp_pose,grasp=True)
+                robot.move_updown(grasp_pose,grasp=True,fast_vel=4,slow_vel=1)
 
                 #运动到目标位置并放下
                 robot.home(t=1)
                 place_pose=robot.get_pickpose_from_pose(goal_pose)
                 #只是用xyz,旋转角度使用grasp的角度
                 place_pose[3:]=grasp_pose[3:]
-                robot.move_updown(place_pose,grasp=False)
+                robot.move_updown(place_pose,grasp=False,fast_vel=4,slow_vel=1)
             break
 
 
