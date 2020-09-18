@@ -185,7 +185,7 @@ rm -rf build devel
 # 3. Verify whether your solution can be launched in the following way
 # In terminal 1
 sudo docker exec -it ocrtoc_container bash
-source /root/catkin_ws/install.setup.bash
+source /root/catkin_ws/install/setup.bash
 roslaunch ocrtoc_task bringup_simulator.launch simulator:=gazebo gui:=true scene:=1-1
 # In terminal 2
 sudo docker exec -it ocrtoc_container bash
@@ -213,3 +213,14 @@ sudo docker commit ocrtoc_container your_submission_docker_image_name
 
 ## Technical support
 If you encounter technical issues regarding this software package, please contact us at info@ocrtoc.org
+
+
+
+
+
+
+
+```
+source /root/ocrtoc_ws/install/setup.bash
+```
+
