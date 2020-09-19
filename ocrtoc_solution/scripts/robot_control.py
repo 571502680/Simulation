@@ -520,9 +520,9 @@ def test_gripper():
 
             print("Grasp Pose is",grasp_pose)
             robot.gripper_control(angle=0,force=0)
-            robot.move_updown(grasp_pose,grasp=True)
+            robot.move_updown(grasp_pose,grasp=True,fast_vel=0.4,slow_vel=0.1)
             robot.home(t=1)
-            robot.move_updown(grasp_pose,grasp=False)
+            robot.move_updown(grasp_pose,grasp=False,fast_vel=0.4,slow_vel=0.1)
             print("Move to {}".format(objects.names[i]))
         break
 
