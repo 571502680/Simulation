@@ -368,6 +368,15 @@
     </collision>
   </link>
 
+<!--   Solve the Sapien Problem-->
+  <joint name="robotiq_ur_coupler_robotiq_2f_85_ee_joint" type="fixed">
+    <origin xyz="0 0 0.1493" rpy="0 0 0"/>
+	  <parent link="robotiq_arg2f_base_link"/>
+	  <child link="robotiq_2f_85_ee_link"/>
+  </joint>
+  <link name="robotiq_2f_85_ee_link"/>
+<!--   Solve the Sapien Problem-->
+
   <link name="robotiq_arg2f_base_link">
     <inertial>
       <origin rpy="0 0 0" xyz="8.625E-08 -4.6583E-06 0.03145"/>

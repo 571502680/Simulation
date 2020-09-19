@@ -15,19 +15,13 @@
 
      
 
-2. 在vision_process中的DenseFusion_Lib中创建models文件夹,下载DenseFusion的网络模型:
+2. 在vision_process/scripts/DenseFusion_Lib/models和vision_process/scripts/SegNet_Lib/models两个文件夹中添加对应的网络模型
 
      ```
-     链接: https://pan.baidu.com/s/1d-px7w1C6uXhLJAKTByJ5g  密码: ngam
+     链接: https://pan.baidu.com/s/1MkONCS5DiYbzXIt8QVfZVg  密码: d55w
      ```
 
-     
-
-3. 在vision_process中的SegNet_Lib中创建models文件夹,下载SegNet的网络模型:
-
-     ```
-     链接: https://pan.baidu.com/s/1LRlL_PEil8cAWvyLDXbSWw  密码: ng61
-     ```
+     - Gazebo和SegNet的网络模型不同,下载的时候需要注意
 
      
 

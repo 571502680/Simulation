@@ -161,6 +161,7 @@ include_directories(
 ## Mark executable scripts (Python etc.) for installation
 ## in contrast to setup.py, you can choose the destination
 install(PROGRAMS
+
   scripts/Make_Data.py
   scripts/Read_Data.py
   scripts/DenseFusionInfer.py

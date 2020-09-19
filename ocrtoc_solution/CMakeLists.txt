@@ -32,9 +32,11 @@ install(DIRECTORY
 
 install(PROGRAMS
   scripts/commit_solution.py
+
   scripts/kdl_conversions.py
   scripts/kdl_parser.py
   scripts/quaternion.py
   scripts/robot_control.py
+
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )

@@ -1,16 +1,16 @@
 #! /usr/bin/env python
 #-*- coding: utf-8 -*-
-import actionlib
+#基础包
 import rospy
-
+import actionlib
+import numpy as np
+import time
+#通信接口定义
 import ocrtoc_task.msg
 from control_msgs.msg import GripperCommandActionGoal
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
-
-import numpy as np
-import time
+#自己包使用
 import robot_control
-
 
 class CommitSolution(object):
     def __init__(self, name):
@@ -86,14 +86,14 @@ class CommitSolution(object):
                 print("Traget is {},it's Pose is {}".format(objects.names[i],origin_pose))
                 grasp_pose=robot.get_pickpose_from_pose(origin_pose)#Z轴翻转获取物体的抓取Pose
                 robot.gripper_control(angle=0,force=1)
-                robot.move_updown(grasp_pose,grasp=True)
+                robot.move_updown(grasp_pose,grasp=True,fast_vel=0.4,slow_vel=0.1)
 
                 #运动到目标位置并放下
                 robot.home(t=1)
                 place_pose=robot.get_pickpose_from_pose(goal_pose)
                 #只是用xyz,旋转角度使用grasp的角度
                 place_pose[3:]=grasp_pose[3:]
-                robot.move_updown(place_pose,grasp=False)
+                robot.move_updown(place_pose,grasp=False,fast_vel=0.4,slow_vel=0.1)
             break
 
 
