@@ -324,7 +324,7 @@ class Robot(object):
         self.motion_generation(pose[np.newaxis,:],vel=slow_vel)
         if grasp:
             # self.grasp_slowly(0.5,force=1)
-            self.gripper_control(angle=0.5,force=1)
+            self.gripper_control(angle=0.6,force=1)
         else:
             self.gripper_control(angle=0,force=1)
         time.sleep(1)
@@ -414,8 +414,8 @@ class Objects(object):
         ## todo, we need to do object localization by the cameras
         ## now, I use the Gazebo topic to get them in world frame.
         if get_pose_from_gazebo:
-            # self.objects_state_sub = rospy.Subscriber("gazebo/model_states", ModelStates, self.objects_state_cb, queue_size=10)#读取gazebo信息
-            self.objects_state_sub = rospy.Subscriber("/sapien/get_model_state", ModelStates, self.objects_state_cb, queue_size=10)#读取sapien信息
+            self.objects_state_sub = rospy.Subscriber("gazebo/model_states", ModelStates, self.objects_state_cb, queue_size=10)#读取gazebo信息
+            # self.objects_state_sub = rospy.Subscriber("/sapien/get_model_state", ModelStates, self.objects_state_cb, queue_size=10)#读取sapien信息
         else:
             self.DenseFuion_result_sub=rospy.Subscriber("/poseinworld",ModelStates,self.objects_state_cb,queue_size=10)
 
@@ -504,9 +504,9 @@ def test_gripper():
     :return:
     """
     robot=Robot(init_node=True)
-    objects=Objects(get_pose_from_gazebo=True)#从Gazebo中获取Pose
+    objects=Objects(get_pose_from_gazebo=False)#从Gazebo中获取Pose
     while not rospy.is_shutdown():
-        robot.getpose_home()
+        robot.getpose_home(t=3)
         print("Ready to get the Pose")
         objects.get_pose()
         for i,pose in enumerate(objects.x):
@@ -530,7 +530,7 @@ def test_gripper():
 def test_sapien():
     robot=Robot(init_node=True)
     while not rospy.is_shutdown():
-        robot.getpose_home()
+        robot.getpose_home(t=3)
         print("Ready to get the Pose")
         robot.home(t=1)
         #更改一下pose
@@ -541,7 +541,6 @@ def test_sapien():
         robot.move_updown(grasp_pose,grasp=True)
         robot.home(t=1)
         robot.move_updown(grasp_pose,grasp=False)
-
         break
 
 
@@ -557,8 +556,8 @@ def move_home():
 
 
 if __name__ == '__main__':
-    test_sapien()
-    # test_gripper()
+    # test_sapien()
+    test_gripper()
     # move_home()
 
 

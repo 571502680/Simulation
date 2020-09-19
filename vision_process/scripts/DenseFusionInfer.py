@@ -43,7 +43,7 @@ class DenseFusion_Detector:
             rospy.init_node("DenseFusionInfer")
         #1:导入网络
         if model_path is None:
-            self.model_path="DenseFusion_Lib/pose_model_1_0.04200344247743487.pth"
+            self.model_path="DenseFusion_Lib/models/sapien_posemodel_0.041.pth"
         else:
             self.model_path=model_path
 
@@ -113,7 +113,7 @@ class DenseFusion_Detector:
         #4:导入SegNet
         self.segnet=SegNet(input_nbr=3,label_nbr=60)
         if segnet_path is None:
-            self.segnet_path="SegNet_Lib/models/model_27_0.014149878763573919.pth"
+            self.segnet_path="SegNet_Lib/models/segnet_sapien_0.061.pth"
         else:
             self.segnet_path=segnet_path
         self.segnet.load_state_dict(torch.load(self.python_path+self.segnet_path))
