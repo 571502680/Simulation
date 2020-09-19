@@ -11,6 +11,7 @@ from kdl_parser import kdl_tree_from_urdf_model
 import PyKDL
 
 # msgs
+from std_msgs.msg import Int8
 from sensor_msgs.msg import JointState
 from gazebo_msgs.msg  import ModelStates
 from control_msgs.msg import GripperCommandActionGoal
@@ -80,6 +81,8 @@ class Robot(object):
                                       [0,-1,0,0],
                                       [0,0,-1,0],
                                       [0,0,0,1]])
+
+
 
     #####################################机械臂控制接口##############################
     def forward_kinematics(self, q):
@@ -417,9 +420,11 @@ class Objects(object):
             self.objects_state_sub = rospy.Subscriber("gazebo/model_states", ModelStates, self.objects_state_cb, queue_size=10)#读取gazebo信息
             # self.objects_state_sub = rospy.Subscriber("/sapien/get_model_state", ModelStates, self.objects_state_cb, queue_size=10)#读取sapien信息
         else:
-            self.DenseFuion_result_sub=rospy.Subscriber("/poseinworld",ModelStates,self.objects_state_cb,queue_size=10)
+            self.DenseFuion_result_sub=rospy.Subscriber("/DenseFusionInfer/PoseinWorld",ModelStates,self.objects_state_cb,queue_size=10)
 
         self.update_pose=False#用于决定是否更新Pose
+
+        self.detect_state_pub=rospy.Publisher("/DenseFusionInfer/DetectState",Int8,queue_size=100)
 
     def objects_state_cb(self,data):
         if self.update_pose:#在获取位姿的时候为True,获取完成之后为False
@@ -465,6 +470,9 @@ class Objects(object):
             rate.sleep()
 
         self.update_pose=False
+        send_data=Int8()
+        send_data.data=1
+        self.detect_state_pub.publish(send_data)
 
 
 
@@ -524,7 +532,7 @@ def test_gripper():
             robot.home(t=1)
             robot.move_updown(grasp_pose,grasp=False,fast_vel=0.4,slow_vel=0.1)
             print("Move to {}".format(objects.names[i]))
-        break
+
 
 
 def test_sapien():
@@ -557,8 +565,8 @@ def move_home():
 
 if __name__ == '__main__':
     # test_sapien()
-    test_gripper()
-    # move_home()
+    # test_gripper()
+    move_home()
 
 
 

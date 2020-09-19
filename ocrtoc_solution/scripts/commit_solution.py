@@ -92,7 +92,7 @@ class CommitSolution(object):
                 robot.home(t=1)
                 place_pose=robot.get_pickpose_from_pose(goal_pose)
                 #只是用xyz,旋转角度使用grasp的角度
-                place_pose[3:]=grasp_pose[3:]
+                # place_pose[3:]=grasp_pose[3:]
                 robot.move_updown(place_pose,grasp=False,fast_vel=0.4,slow_vel=0.1)
             break
 

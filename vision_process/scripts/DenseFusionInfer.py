@@ -25,6 +25,7 @@ from PIL import Image
 from torch.autograd import Variable
 import rospy
 from geometry_msgs.msg import Pose
+from std_msgs.msg import Int8
 from gazebo_msgs.msg import ModelStates
 import tf.transformations as trans_tools
 import math
@@ -125,6 +126,14 @@ class DenseFusion_Detector:
                                      [-0.14367474, -0.98843452, -0.04852593,  0.13329369],
                                      [-0.77253944,  0.08137731,  0.62973054,  0.58269   ],
                                      [ 0.        ,  0.        ,  0.        ,  1.        ]])
+
+
+
+        #6:信息发布
+        self.poses_pub=rospy.Publisher("/DenseFusionInfer/PoseinWorld",ModelStates,queue_size=10)
+        self.detect_state_sub=rospy.Subscriber("/DenseFusionInfer/DetectState",Int8,self.update_detect_state)
+        self.DETECT_FLAG=True#用于重新检测物体姿态
+        self.STOP_FLAG=False#用于停止程序
 
     ###################################SegNet的使用#######################################
     def segnet_infer(self,bgr_image):
@@ -451,7 +460,6 @@ class DenseFusion_Detector:
         @return:
         """
         make_Data=Make_Data.Make_Data()
-        poses_pub=rospy.Publisher("/poseinworld",ModelStates,queue_size=10)
         rate=rospy.Rate(10)
         with torch.no_grad():
             while not rospy.is_shutdown():
@@ -463,10 +471,19 @@ class DenseFusion_Detector:
                     modelStates=ModelStates()
                     modelStates.name=objecd_id_list
                     modelStates.pose=poses_list
-                    poses_pub.publish(modelStates)
+                    self.poses_pub.publish(modelStates)
                 else:
                     print('[Warning] color_image not exist')
                 rate.sleep()
+                if self.STOP_FLAG:
+                    break
+
+    def update_detect_state(self,data):
+        state=data.data
+        if state==1:
+            print("DenseFusion Get Stop Flag,pub node will stop")
+            self.STOP_FLAG=True
+
 
     ###################################进行DenseFusion精度确定#######################################
     def compare_pose(self,true_pose,pose):
