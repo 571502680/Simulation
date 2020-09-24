@@ -1,15 +1,12 @@
 __pycache_/
 .vscode/
 .idea/
-
-
 *.ipynb_checkpoints
 *.DS_Store
 *.idea
 *.egg-info
 *.pyc
 *__pychache__
-
 
 ## Core latex/pdflatex auxiliary files:
 *.aux
@@ -28,7 +25,6 @@ __pycache_/
 *.nav
 *.snm
 *.ai
-
 
 
 ## Build tool auxiliary files:
@@ -54,9 +50,14 @@ __pycache_/
 checkpoint_dir/
 *.tar.gz
 
-*.zip
+
 *.exe
 
 #DenseFusion
 *.pth
 temp*.py
+*.zip
+ALiDataset/data
+ALiDataset/models
+
+
