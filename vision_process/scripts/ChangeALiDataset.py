@@ -34,6 +34,7 @@ import numpy as np
 import math
 import open3d as o3d
 import xml.etree.ElementTree as ET
+import shutil
 
 python_path=os.path.dirname(__file__)
 
@@ -65,7 +66,7 @@ class Change_Dataset:
     def generate_classes_txt(self):
         """
         读取models文件下的所有文件夹,生成对应的名称
-        注意里面的.gitignore需要手动删除
+        这里面去掉了table和.gitignore两个文件
         :return:
         """
         class_names=os.listdir(self.models_path)
@@ -73,6 +74,8 @@ class Change_Dataset:
 
         file=open("classes.txt",'w')
         for class_name in class_names:
+            if class_name=="table" or class_name==".gitignore":
+                continue
             file.write(class_name+"\n")
         file.close()
 
@@ -223,6 +226,7 @@ class Change_Dataset:
         for i,object_name in enumerate(self.objects_names):
             print("Now is changeing object: {}".format(object_name))
             if object_name=="table":
+                print("[Warning] table should not appear in object_names")
                 continue
 
             if object_name=='prism':#prism没有外观,但是仍然给他进行一个赋值,之后HSV的时候再说这个的解决办法
@@ -443,6 +447,39 @@ class Change_Dataset:
 
             print("already generate {}'s points.xyz".format(object_name))
 
+    def generate_object_models(self):
+        """
+        用于将所有物体的.xyz文件移动到object_models/object_name/下面
+        :return:
+        """
+        if not os.path.exists("object_models"):
+            print("Not exist object_models path,create a new file")
+            os.mkdir("object_models")
+
+
+        for i,object_name in enumerate(self.objects_names):
+            if object_name=="table":
+                print("[Warning] table should not appear in object_names")
+                continue
+            print("Now is Moving object {} ...".format(object_name))
+            xyz_file=os.path.join(self.models_path,object_name)+"/collision_meshes/points.xyz"
+            object_path="object_models/"+object_name+"/points.xyz"
+
+            #新建文件夹用于保存对应文件
+            if not os.path.exists("object_models/"+object_name):
+                print("[Warning] Not exist {} file,create a new file".format(object_name))
+                os.mkdir("object_models/"+object_name)
+
+            #确保存在.xyz文件存在
+            if not os.path.exists(xyz_file):
+                print("[Error] Can not open object {}'s xyz file,please check path:{}".format(object_name,xyz_file))
+                sys.exit()
+
+            shutil.copyfile(src=xyz_file,dst=object_path)
+
+        print("Move Finish")
+
+
 
 ####################使用样例#######################
 def example():
@@ -451,10 +488,12 @@ def example():
     change_Dataset.change_color()#更改所有图片的颜色
     change_Dataset.add_scale()#索引所有场景的scale,从而生成统一的尺寸
     change_Dataset.generate_xyz_file()#生成points.xyz文件
+    change_Dataset.generate_object_models()#将所有points.xyz文件移动到object_models中
+
 
 def main():
     change_Dataset=Change_Dataset()
-    change_Dataset.generate_xyz_file()
+    change_Dataset.generate_object_models()
 
 if __name__ == '__main__':
     main()

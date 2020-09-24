@@ -70,7 +70,6 @@ rubiks_cube
 scissors
 spoon
 sugar_box
-table
 tea_can1
 tomato_soup_can
 tuna_fish_can
