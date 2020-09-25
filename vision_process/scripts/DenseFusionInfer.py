@@ -577,16 +577,3 @@ if __name__ == '__main__':
     # densefusion_Detector.see_detect_result(debug=True)#用于查看这个场景的结果
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
