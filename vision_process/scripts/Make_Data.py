@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 """
 这里面进行DenseFusion数据集的生成任务,基于更改颜色的models和未更改颜色的models,生成DenseFusion要求的数据
+Log: 2020.9.24:
+    基于Read_Data进行数据读取,然后进行数据集的生成.HSV_node进行了更新,从而数据集的整合更好了
 """
 import os
 import sys
@@ -9,17 +11,10 @@ import rospy
 import png
 import cv2 as cv
 import numpy as np
-import tf
-import tf.transformations as trans_tools
 import open3d as o3d
 import scipy.io as scio
-import xml.etree.ElementTree as ET
 #ROS中的通信协议
-from cv_bridge import CvBridge,CvBridgeError
-from sensor_msgs.msg import Image,CameraInfo
-from gazebo_msgs.srv import GetModelState,SetModelState,GetModelStateRequest,GetWorldProperties,GetWorldPropertiesRequest,SpawnModel,SpawnModelRequest
-from geometry_msgs.msg import Pose,Point,Quaternion
-
+from cv_bridge import CvBridge
 import Read_Data
 
 python_path=os.path.dirname(__file__)
@@ -60,7 +55,6 @@ class Make_Data:
                                           [ 0.12796457,-0.98843452,0.08137731,0.01304234],
                                           [-0.77529651,-0.04852593 ,0.62973054  ,0.07146605],
                                           [ 0.   ,       0.  ,        0.   ,       1.        ]])
-
 
     #############################生成需要的信息####################################
     def get_objects_names(self):
@@ -138,7 +132,6 @@ class Make_Data:
                 print("HSV is :",hsv)
             except:
                 print("[Warning] Can not get HSV value")
-
 
     def read_image_bgr(self,event,x,y,flags,param):
         if event==cv.EVENT_MOUSEMOVE:
@@ -266,7 +259,6 @@ class Make_Data:
 
         print("********Already Make the Scene_id :{} data********".format(scene_id))
 
-
 def make_data():
     if len(sys.argv)!=3:
         print("[Error] Please input the scenid HSV_MODE to the make_data()")
@@ -310,7 +302,6 @@ def check_makecorrect(scene_id):
         show_points.append(target_o3d)
 
     o3d.visualization.draw_geometries(show_points)
-
 
 if __name__ == '__main__':
     # check_makecorrect(scene_id='1-1')

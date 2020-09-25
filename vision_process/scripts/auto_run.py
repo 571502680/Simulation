@@ -6,6 +6,9 @@ Log: 2020.9.14:
     今天进行命令的整合,sort中按照顺序排序,从而知道在哪里没有
     另外,还添加了数据集检查的部分,确保所有数据集正常生成,错误的数据集进行了记录
     深度图中,有一些深度图的返回值是.nan,对于这些深度图进行了特殊的处理
+
+Log: 2020.9.24:
+    添加了基于Sapien的数据集生成接口
 """
 import os
 import sys
@@ -184,14 +187,10 @@ class Auto_MakeData:
 
 
 if __name__ == '__main__':
-    auto_MakeData=Auto_MakeData(HSV_MODE=False)
-    auto_MakeData.auto_run(begin_id='1-10')
+    auto_MakeData=Auto_MakeData(HSV_MODE=True)
+    auto_MakeData.auto_run(begin_id='1-570',stop_id='2-1')
     # auto_MakeData.clean_dataset()
     # auto_MakeData.run_error_data()
-
-
-
-
 
 
 
