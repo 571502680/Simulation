@@ -34,11 +34,11 @@ class Read_YCB:
     def __init__(self,get_object_points=False):
         self.classes_file_path=python_path+"/classes.txt"
         self.objects_points={}
-        self.objects_names=self.get_objects_name()
+        self.objects_names=self.get_objects_names()
         if get_object_points:
             self.get_objects_points()#这里进行self.objects_points的填充
 
-    def get_objects_name(self):
+    def get_objects_names(self):
         """
         这里面进行此目录中classes.txt的文件更新
         :return:
@@ -138,7 +138,9 @@ class Read_Data:
         :return:
         """
         try:
-            self.depth_image=self.bridge.imgmsg_to_cv2(data,'32FC1')#深度图获取到的单位是m位置度
+            cv_image=self.bridge.imgmsg_to_cv2(data,'32FC1')
+            self.depth_image=cv_image*10000
+            self.depth_image[np.isnan(self.depth_image)]=0
         except CvBridgeError as e:
             print("[Error] depth_process_callback occur error {}".format(e))
             return
@@ -283,6 +285,7 @@ class Read_Data:
         :param debug:是否进行结果输出
         :param scene_id: 对应场景id
         :return: world_info_list:一个list,每个是一个dict,dict中包含了一个物体的gazebo_name,true_name,model_pose(model_pose是Pose的消息类型)
+        :return: gazebo_name2true_name:从一个gazebo_name中索引到对应的真实物体名称
         """
         world_info_list=[]
 
@@ -293,9 +296,10 @@ class Read_Data:
         xml_tree=ET.parse(worldfile_path).getroot()
         for child_1 in xml_tree.findall('world/model'):
             gazebo_name=child_1.attrib['name']
-            gazebo_name_list.append(gazebo_name)
             if gazebo_name == "ground_plane" or gazebo_name == "table":
                 continue
+
+            gazebo_name_list.append(gazebo_name)
             for child_2 in child_1.findall('link/collision/geometry/mesh/uri'):
                 uri=child_2.text
                 uri=uri[8:]
@@ -320,7 +324,7 @@ class Read_Data:
                 print('[Error] Can not find model name:{} in name_index'.format(gazebo_name))
                 continue
 
-        return world_info_list
+        return world_info_list,gazebo_name2true_name,gazebo_name_list
 
     def get_T_Matrix(self,target_frame="base_link",source_frame="world"):
         """
@@ -400,7 +404,7 @@ def check_object_pose(debug=False):
     read_YCB=Read_YCB(get_object_points=True)
     #1:获取Gazebo中物体的Pose
     #获取world_info的dict,这里面有每一个物体的Pose,XML中读取的Pose,GazeboName和真实名称
-    world_info_list=read_Data.get_world_info(debug=False)
+    world_info_list,gazebo_name2true_name,gazebo_name_list=read_Data.get_world_info(debug=False)
 
     #生成需要产生的点云
     show_points=[]#用于保存所有需要展示的points
@@ -489,11 +493,11 @@ def get_pose_in_camera():
 
 
 if __name__ == '__main__':
-    # test_read_image()
+    test_read_image()
     # test_get_camera_info()
     # test_get_object_pose()
     # check_object_pose()
-    get_pose_in_camera()
+    # get_pose_in_camera()
 
 
 

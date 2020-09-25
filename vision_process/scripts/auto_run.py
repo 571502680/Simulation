@@ -75,8 +75,12 @@ class Auto_MakeData:
                 time.sleep(20)
 
             #2.3:进行任务执行
-            os.system("roslaunch vision_process make_data.launch scene:={} &".format(scene_id))
+            if self.HSV_MODE:
+                os.system("roslaunch vision_process make_data.launch scene:={} simulator:={}&".format(scene_id,"gazebo"))
+            else:
+                os.system("roslaunch vision_process make_data.launch scene:={} simulator:={}&".format(scene_id,"sapien"))
             time.sleep(10)
+
             os.system("rosrun vision_process Make_Data.py {} {}".format(scene_id,self.HSV_MODE))
             time.sleep(1)
             os.system("killall gzserver")
@@ -111,7 +115,11 @@ class Auto_MakeData:
                 time.sleep(20)
 
             #2.3:进行任务执行
-            os.system("roslaunch vision_process make_data.launch scene:={} &".format(scene_id))
+            if self.HSV_MODE:
+                os.system("roslaunch vision_process make_data.launch scene:={} simulator={}&".format(scene_id,"gazebo"))
+            else:
+                os.system("roslaunch vision_process make_data.launch scene:={} simulator={}&".format(scene_id,"sapien"))
+
             time.sleep(10)
             os.system("rosrun vision_process Make_Data.py {} {}".format(scene_id,self.HSV_MODE))
             time.sleep(1)
@@ -119,7 +127,6 @@ class Auto_MakeData:
             os.system("rosclean purge -y")
 
         print("!!!!!!!!!!!!!!!!!!!Already Make All Data!!!!!!!!!!!!!!!!!!!")
-
 
     def clean_dataset(self):
         """
@@ -152,7 +159,6 @@ class Auto_MakeData:
 
         error_data_file.close()
 
-
     def makedata_onescene(self,scene_id):
         """
         对scene_id做数据生成
@@ -169,9 +175,9 @@ class Auto_MakeData:
 
 if __name__ == '__main__':
     auto_MakeData=Auto_MakeData(HSV_MODE=False)
-    # auto_MakeData.auto_run('2-1')
+    auto_MakeData.auto_run()
     # auto_MakeData.clean_dataset()
-    auto_MakeData.run_error_data()
+    # auto_MakeData.run_error_data()
 
 
 

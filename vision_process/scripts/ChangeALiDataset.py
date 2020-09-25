@@ -57,7 +57,7 @@ class Change_Dataset:
         self.scenes_path=self.material_path+"/"+"scenes"#scenes路径
 
         #从classes.txt中获取物体名称
-        self.objects_names=self.get_objects_name()
+        self.objects_names=self.get_objects_names()
 
         #生成颜色编码方式,H采用180度分为30个档(6为间隔),S有85,179,255,V默认为200
         self.HSV_list,self.BGR_list=self.generate_color_list()
@@ -79,12 +79,12 @@ class Change_Dataset:
             file.write(class_name+"\n")
         file.close()
 
-    def get_objects_name(self):
+    def get_objects_names(self):
         """
         这里面进行此目录中classes.txt的文件更新
         :return:
         """
-        file=open("classes.txt",'r')
+        file=open(python_path+"/classes.txt",'r')
         class_names=file.readlines()
         objects_name=[]
         for class_name in class_names:
@@ -105,7 +105,8 @@ class Change_Dataset:
         """
         HSV_list=[]
         BGR_list=[]
-        s_index=[85,170,255]
+        # s_index=[85,170,255]
+        s_index=[64,128,192,255]
         v=v_value
         h_number=int(math.ceil(float(len(self.objects_names))/len(s_index)))#确保生成的h_number是超过object_names的
         h_range=int(180/h_number)
@@ -490,10 +491,9 @@ def example():
     change_Dataset.generate_xyz_file()#生成points.xyz文件
     change_Dataset.generate_object_models()#将所有points.xyz文件移动到object_models中
 
-
 def main():
     change_Dataset=Change_Dataset()
-    change_Dataset.generate_object_models()
+    change_Dataset.add_scale()
 
 if __name__ == '__main__':
     main()
