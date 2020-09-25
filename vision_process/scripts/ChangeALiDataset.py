@@ -26,6 +26,7 @@ Log:2020.9.10:
 
 log:2020.9.24:
     加入了新的物体,将所有物体从60个添加到了80个,进行了代码的重新书写
+    另外加入.world文件的生成操作,只对xy进行平移
 """
 import sys
 import os
@@ -35,6 +36,7 @@ import math
 import open3d as o3d
 import xml.etree.ElementTree as ET
 import shutil
+import random
 
 python_path=os.path.dirname(__file__)
 
@@ -55,6 +57,7 @@ class Change_Dataset:
 
         self.models_path=self.material_path+"/"+"models_change"#models路径
         self.scenes_path=self.material_path+"/"+"scenes"#scenes路径
+        self.scenes_change_path=self.material_path+"/"+"scenes_change"#用于生成更改场景的id
 
         #从classes.txt中获取物体名称
         self.objects_names=self.get_objects_names()
@@ -480,6 +483,102 @@ class Change_Dataset:
 
         print("Move Finish")
 
+    def move_scenes2oneplace(self):
+        """
+        将所有input.png移动到一个位置,从而知道两次数据集之间的区别
+        :return:
+        """
+        #1:获取所有场景id
+        all_scenes=os.listdir("/home/elevenjiang/Desktop/ocrtoc_materials/scenes")
+        all_scenes.sort(key=lambda data:int(data[0])*10000+int(data.split('-')[1]))#按照排列顺序进行
+
+        #2:对所有场景进行操作
+        for i,scene_id in enumerate(all_scenes):
+            input_file="/home/elevenjiang/Desktop/ocrtoc_materials/scenes/{}/input.png".format(scene_id)
+            target_file="/home/elevenjiang/Desktop/ocrtoc_materials/allscenes/{}-input.png".format(scene_id)
+            shutil.copyfile(src=input_file,dst=target_file)
+
+    ####################################改变object的位置操作####################################
+    def get_random_pose(self,var_list):
+        """
+        送入的是xyzrpy,只更改xy,yaw3个值
+        从gazebo中获取他们对应的受限位置:
+        x:-0.05~0.2
+        y:-0.4~0.4
+        r:-3.14~3.14
+        :param var_list:
+        :return:
+        """
+        if -0.05<var_list[0]*(1+(random.random()-0.5)*2)<0.2:
+            var_list[0]=var_list[0]*(1+(random.random()-0.5)*2)
+
+        if -0.4<var_list[1]*(1+(random.random()-0.5)*2)<0.4:
+            var_list[1]=var_list[1]*(1+(random.random()-0.5)*2)
+
+        if -3.1<var_list[5]*(1+(random.random()-0.5)*2)<3.1:
+            var_list[5]=var_list[5]*(1+(random.random()-0.5)*2)
+
+        return var_list
+
+    def getmore_worldfile(self,begin_number,files_number=250):
+        """
+        进行场景数据的增强
+        xy和xy轴旋转都乘上(1+rand()),xy和旋转矩阵的尺度不超过一定范围(之后确定)
+        生成的新场景,从1-300开始生成,主要针对1-的场景生成
+        :param files_number:生成新文件的数量,根据场景而定,有一些场景只有250个,从而不会生成完
+        :return:
+        """
+        #1:获取所有场景id
+        all_scenes=os.listdir(self.scenes_path)
+        all_scenes.sort(key=lambda data:int(data[0])*10000+int(data.split('-')[1]))#按照排列顺序进行
+
+
+        #2:对所有场景的input.world进行随机参数更改,由于是xyzrpy,因此z轴不动,其他的都动,随机乘上一个(1+rand)即可
+
+        for i,scene_id in enumerate(all_scenes):
+            if scene_id[0]!='1':
+                continue
+
+            #2.1:读取一个场景文件
+            worldfile_path=self.scenes_path+"/"+scene_id+"/input.world"
+            origin_tree= ET.parse(worldfile_path)
+
+            #2.2:更改Pose
+            for child in origin_tree.findall('world/model'):
+                object_name = child.attrib['name']
+                if object_name=='table':
+                    print("[Warning] the scene_id :{} has model named table".format(scene_id))
+                    continue
+
+                var_list=None
+                for pose in child.findall('pose'):
+                    var_list = list(map(float, pose.text.split(' ')))
+                    var_list=self.get_random_pose(var_list)#生成新的Pose
+                    pose.text="{} {} {} {} {} {}".format(var_list[0],var_list[1],var_list[2],var_list[3],var_list[4],var_list[5])
+                    break
+
+                if var_list is None:
+                    print("[Error] the var_list is None")
+
+            #3:保存对应的矩阵
+            savefile=self.scenes_change_path+"/1-"+str(begin_number+i)
+            if not os.path.exists(savefile):
+                os.mkdir(savefile)
+            else:
+                print("[Warning] the path {} exist,please check".format(savefile))
+                continue
+
+            savefile_path=savefile+"/input.world"
+            origin_tree.write(savefile_path)
+            if i%30==0:
+                print("Already generate {} .world file".format(i))
+
+            #4:超过一定数量,退出生成
+            if i>files_number:
+                break
+
+
+        print("Already Generate {} new world files".format(files_number))
 
 
 ####################使用样例#######################
@@ -493,7 +592,7 @@ def example():
 
 def main():
     change_Dataset=Change_Dataset()
-    change_Dataset.add_scale()
+    change_Dataset.getmore_worldfile(begin_number=800)
 
 if __name__ == '__main__':
     main()

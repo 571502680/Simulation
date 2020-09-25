@@ -43,7 +43,7 @@ class Auto_MakeData:
 
         #1:获取所有场景id
         all_scenes=os.listdir("/root/ocrtoc_materials/scenes")
-        all_scenes.sort(key=lambda data:int(data[0])*1000+int(data.split('-')[1]))#按照排列顺序进行
+        all_scenes.sort(key=lambda data:int(data[0])*10000+int(data.split('-')[1]))#按照排列顺序进行
 
         #2:对所有场景进行操作
         for i,scene_id in enumerate(all_scenes):
@@ -79,13 +79,23 @@ class Auto_MakeData:
                 os.system("roslaunch vision_process make_data.launch scene:={} simulator:={}&".format(scene_id,"gazebo"))
             else:
                 os.system("roslaunch vision_process make_data.launch scene:={} simulator:={}&".format(scene_id,"sapien"))
-            time.sleep(10)
+            time.sleep(15)
 
             os.system("rosrun vision_process Make_Data.py {} {}".format(scene_id,self.HSV_MODE))
             time.sleep(1)
-            os.system("killall gzserver")
-            os.system("rosclean purge -y")
 
+            if self.HSV_MODE:
+                #关闭掉Gazebo的内容
+                os.system("killall gzserver")
+            else:
+                #关闭sapien的内容
+                os.system("killall sapien_env.py")
+                os.system("killall roslaunch")
+                os.system("killall python2")
+                os.system("killall robot_state_pub")
+                time.sleep(1)
+
+            os.system("rosclean purge -y")#清除ros内存
         print("!!!!!!!!!!!!!!!!!!!Already Make All Data!!!!!!!!!!!!!!!!!!!")
 
     def run_error_data(self):
@@ -135,7 +145,7 @@ class Auto_MakeData:
         """
         #1:获取所有场景id
         all_scenes=os.listdir("/root/ocrtoc_materials/scenes")
-        all_scenes.sort(key=lambda data:int(data[0])*1000+int(data.split('-')[1]))#按照排列顺序进行
+        all_scenes.sort(key=lambda data:int(data[0])*10000+int(data.split('-')[1]))#按照排列顺序进行
 
         error_data_file=open("error_data.txt",'w')
         dataset_dir="../ALi_dataset/Dataset/"
@@ -175,7 +185,7 @@ class Auto_MakeData:
 
 if __name__ == '__main__':
     auto_MakeData=Auto_MakeData(HSV_MODE=False)
-    auto_MakeData.auto_run()
+    auto_MakeData.auto_run(begin_id='1-10')
     # auto_MakeData.clean_dataset()
     # auto_MakeData.run_error_data()
 

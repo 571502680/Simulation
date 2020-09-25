@@ -267,7 +267,6 @@ class Make_Data:
         print("********Already Make the Scene_id :{} data********".format(scene_id))
 
 
-
 def make_data():
     if len(sys.argv)!=3:
         print("[Error] Please input the scenid HSV_MODE to the make_data()")
@@ -286,8 +285,6 @@ def make_data():
     #制作数据集
     make_Data.make_data(scene_id=scene_id,debug=False)
     sys.exit()
-
-
 
 def check_makecorrect(scene_id):
     make_Data=Make_Data(HSV_mode=True)
