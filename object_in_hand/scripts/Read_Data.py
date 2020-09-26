@@ -128,6 +128,15 @@ class Read_Data:
         #read_image_rgb
         self.read_image_rgb=None
         self.last_hsv=None
+        self.Trans_camera2world=np.array([[-0.61861181,  0.12718366, -0.7753346 ,  0.55722816],
+                                          [-0.14318608, -0.98853531, -0.04791343,  0.12785504],
+                                          [-0.77253944,  0.08137731,  0.62973054,  0.58769   ],
+                                          [ 0.        ,  0.        ,  0.        ,  1.        ]])
+
+        self.Trans_world2Camera=np.array([[-0.61861181, -0.14318608, -0.77253944,  0.81702868],
+                                          [ 0.12718366, -0.98853531,  0.08137731,  0.00769428],
+                                          [-0.7753346 , -0.04791343,  0.62973054,  0.06807791],
+                                          [ 0.        ,  0.        ,  0.        ,  1.        ]])
 
     ####################################读取图片的函数##################################
     def depth_process_callback(self,data,see_image=False):
@@ -326,7 +335,7 @@ class Read_Data:
 
         return world_info_list,gazebo_name2true_name,gazebo_name_list
 
-    def get_T_Matrix(self,target_frame="base_link",source_frame="world"):
+    def get_T_Matrix(self,target_frame="kinect_camera_visor",source_frame="world"):
         """
         获取T_worldtoCamera
         @return:在world坐标系中,base_link的4*4齐次矩阵
@@ -343,15 +352,10 @@ class Read_Data:
                 time.sleep(0.5)
                 continue
 
-        print("Get the Trans:{},rot{}".format(trans,rot))
+        # print("Get the Trans:{},rot{}".format(trans,rot))
 
         Trans_world2Camera=trans_tools.quaternion_matrix(rot)
         Trans_world2Camera[0:3,3]=np.array(trans).T#融合上T
-
-        #获取opencv中的rect和trans的操作
-        # rvec=cv.Rodrigues(Trans_world2Camera[0:3,0:3])[0]
-        # print("rvec:",rvec)
-        # print("tvec:",trans)
 
         return Trans_world2Camera
 
@@ -391,9 +395,9 @@ def test_get_Trans_Matrix():
     这里面获取整个物体的mask(相对于Kinect的)
     @return:
     """
-    read_Data=Read_Data(init_node=True)
-    Trans_Matrix=read_Data.get_T_Matrix()
-    print("Tran_Matrix is:\n",Trans_Matrix)
+    read_Data=Read_Data(init_node=True,simulator='sapien')
+    Trans_Matrix=read_Data.get_T_Matrix(target_frame="kinect_camera_body",source_frame="world")
+    print("Tran_Matrix is:\n {}".format(Trans_Matrix))
 
 def check_object_pose(debug=False):
     """
@@ -458,16 +462,20 @@ def get_pose_in_camera():
     read_Data=Read_Data(init_node=True)
     read_YCB=Read_YCB(get_object_points=True)
     #获取物体在Base坐标系下的Pose
-    world_info_list=read_Data.get_world_info()
+    world_info_list,gazebo_name2true_name,gazebo_name_list=read_Data.get_world_info()
 
     #变换到Camera坐标系下的Pose
-    Trans_world2Camera=read_Data.get_T_Matrix(target_frame="kinect_camera_visor",source_frame="world")
+    Trans_world2Camera=read_Data.get_T_Matrix(target_frame="kinect_camera_body",source_frame="world")
 
     #直接所有物体变换到Camera坐标系下
     #1:先获取所有物体的点云
     show_pointscloud=[]
     axis_point=o3d.geometry.TriangleMesh.create_coordinate_frame(size=0.1)
     show_pointscloud.append(axis_point)
+    axis_point_camera=o3d.geometry.TriangleMesh.create_coordinate_frame(size=0.1)
+    axis_point_camera.transform(read_Data.Trans_world2Camera)
+    show_pointscloud.append(axis_point_camera)
+
     for each_object in world_info_list:
         true_name=each_object['true_name']
         model_pose=each_object['model_pose']
@@ -493,11 +501,12 @@ def get_pose_in_camera():
 
 
 if __name__ == '__main__':
-    test_read_image()
+    # test_read_image()
     # test_get_camera_info()
     # test_get_object_pose()
     # check_object_pose()
-    # get_pose_in_camera()
+    get_pose_in_camera()
+    # test_get_Trans_Matrix()
 
 
 

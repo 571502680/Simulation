@@ -129,6 +129,18 @@ class Read_Data:
         self.read_image_rgb=None
         self.last_hsv=None
 
+
+        #坐标系变换矩阵(Sapien中获取)
+        self.Trans_camera2world=np.array([[-0.61861181,  0.12718366, -0.7753346 ,  0.55722816],
+                                          [-0.14318608, -0.98853531, -0.04791343,  0.12785504],
+                                          [-0.77253944,  0.08137731,  0.62973054,  0.58769   ],
+                                          [ 0.        ,  0.        ,  0.        ,  1.        ]])
+
+        self.Trans_world2Camera=np.array([[-0.61861181, -0.14318608, -0.77253944,  0.81702868],
+                                          [ 0.12718366, -0.98853531,  0.08137731,  0.00769428],
+                                          [-0.7753346 , -0.04791343,  0.62973054,  0.06807791],
+                                          [ 0.        ,  0.        ,  0.        ,  1.        ]])
+
     ####################################读取图片的函数##################################
     def depth_process_callback(self,data,see_image=False):
         """
@@ -458,7 +470,7 @@ def get_pose_in_camera():
     read_Data=Read_Data(init_node=True)
     read_YCB=Read_YCB(get_object_points=True)
     #获取物体在Base坐标系下的Pose
-    world_info_list=read_Data.get_world_info()
+    world_info_list,gazebo_name2true_name,gazebo_name_list=read_Data.get_world_info()
 
     #变换到Camera坐标系下的Pose
     Trans_world2Camera=read_Data.get_T_Matrix(target_frame="kinect_camera_visor",source_frame="world")
@@ -468,6 +480,11 @@ def get_pose_in_camera():
     show_pointscloud=[]
     axis_point=o3d.geometry.TriangleMesh.create_coordinate_frame(size=0.1)
     show_pointscloud.append(axis_point)
+    axis_point_camera=o3d.geometry.TriangleMesh.create_coordinate_frame(size=0.1)
+    axis_point_camera.transform(read_Data.Trans_world2Camera)
+    show_pointscloud.append(axis_point_camera)
+
+
     for each_object in world_info_list:
         true_name=each_object['true_name']
         model_pose=each_object['model_pose']
@@ -493,11 +510,11 @@ def get_pose_in_camera():
 
 
 if __name__ == '__main__':
-    test_read_image()
+    # test_read_image()
     # test_get_camera_info()
     # test_get_object_pose()
     # check_object_pose()
-    # get_pose_in_camera()
+    get_pose_in_camera()
 
 
 

@@ -166,9 +166,11 @@ class Robot(object):
         qd = self.inverse_kinematics(x[:3],x[3:])
         if qd is None:
             rospy.logerr('qd is None, Inverse kinematics fail!!!')
+            return False
 
         else:
             self.move_to_joint(qd, t )
+            return True
 
     def home(self, t=10):
         p = np.array([ 1.55986781, -2.1380509 ,  2.49498554, -1.93086818, -1.5671494 , 0])

@@ -187,8 +187,8 @@ class Auto_MakeData:
 
 
 if __name__ == '__main__':
-    auto_MakeData=Auto_MakeData(HSV_MODE=True)
-    auto_MakeData.auto_run(begin_id='1-570',stop_id='2-1')
+    auto_MakeData=Auto_MakeData(HSV_MODE=False)
+    auto_MakeData.auto_run(begin_id='1-250',stop_id='2-1')
     # auto_MakeData.clean_dataset()
     # auto_MakeData.run_error_data()
 
