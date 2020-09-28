@@ -125,8 +125,9 @@ class Read_Data:
         #导入点云文件(暂时先保存一个)
         self.save_image_flag=False
 
-        #read_image_rgb
-        self.read_image_rgb=None
+        #read_image_bgr
+        self.read_image_bgr=None
+        self.read_image_hsv=None
         self.last_hsv=None
 
     ####################################读取图片的函数##################################
@@ -160,10 +161,21 @@ class Read_Data:
             cv.imshow("color_map",color_map)
             cv.waitKey(3)
 
-    def read_image_hsv(self,event,x,y,flags,param):
+    def read_image_hsv_callback(self,event,x,y,flags,param):
         if event==cv.EVENT_MOUSEMOVE:
-            hsv=self.read_image_rgb[y,x]
-            print("HSV is :",hsv)
+            try:
+                hsv=self.read_image_hsv[y,x]
+                print("HSV is :",hsv)
+            except:
+                print("[Warning] the target is output range")
+
+    def read_image_bgr_callback(self,event,x,y,flags,param):
+        if event==cv.EVENT_MOUSEMOVE:
+            try:
+                hsv=self.read_image_bgr[y,x]
+                print("BGR is :",hsv)
+            except:
+                print("[Warning] the target is output range")
 
     def image_process_callback(self,data,see_image=False,read_HSV=False):
         """
@@ -187,14 +199,16 @@ class Read_Data:
                 print("[Warning] Can not get the bgr_image")
                 return
             cv_image=self.bgr_image.copy()
+            self.read_image_bgr=cv_image
             cv.namedWindow("image_get",cv.WINDOW_NORMAL)
             cv.imshow("image_get",cv_image)
+            cv.setMouseCallback("image_get",self.read_image_bgr_callback)
             if read_HSV:
                 hsv_image=cv.cvtColor(cv_image,cv.COLOR_BGR2HSV)
-                self.read_image_rgb=hsv_image
+                self.read_image_hsv=hsv_image
                 cv.namedWindow("hsv_get",cv.WINDOW_NORMAL)
                 cv.imshow("hsv_get",hsv_image)
-                cv.setMouseCallback("hsv_get",self.read_image_hsv)
+                cv.setMouseCallback("hsv_get",self.read_image_hsv_callback)
             cv.waitKey(3)
 
     def camera_info_callback(self,data):
@@ -206,7 +220,7 @@ class Read_Data:
         depth_sub=rospy.Subscriber("/kinect/depth/image_raw",Image,callback_lambda)
 
     def begin_get_image(self):
-        callback_lambda=lambda x:self.image_process_callback(x,see_image=False,read_HSV=False)
+        callback_lambda=lambda x:self.image_process_callback(x,see_image=True,read_HSV=True)
         image_sub=rospy.Subscriber("/kinect/color/image_raw",Image,callback_lambda)
 
     def begin_get_camera_info(self):
