@@ -378,7 +378,7 @@ class Change_Dataset:
 
 
         temp=raw_input("Generate all_index.txt?\n          ---y for yes,else for no")
-        print temp
+        print(temp)
         if temp !='y':
             return
 

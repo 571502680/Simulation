@@ -357,11 +357,9 @@ class Read_Data:
                 time.sleep(0.5)
                 continue
 
-        print("Get the Trans:{},rot{}".format(trans,rot))
-
+        # print("Get the Trans:{},rot{}".format(trans,rot))
         Trans_world2Camera=trans_tools.quaternion_matrix(rot)
         Trans_world2Camera[0:3,3]=np.array(trans).T#融合上T
-
         #获取opencv中的rect和trans的操作
         # rvec=cv.Rodrigues(Trans_world2Camera[0:3,0:3])[0]
         # print("rvec:",rvec)
@@ -380,7 +378,8 @@ def test_read_image():
         bgr_image,depth_image=read_Data.get_images()
         if bgr_image is not None:
             cv.imshow("bgr_iamge",bgr_image)
-            cv.waitKey(3)
+            cv.imwrite("bgr_image.png",bgr_image)
+            break
 
 def test_get_camera_info():
     read_Data=Read_Data(init_node=True)
@@ -406,8 +405,8 @@ def test_get_Trans_Matrix():
     @return:
     """
     read_Data=Read_Data(init_node=True)
-    Trans_Matrix=read_Data.get_T_Matrix()
-    print("Tran_Matrix is:\n",Trans_Matrix)
+    Trans_Matrix=read_Data.get_T_Matrix(target_frame='world',source_frame='kinect_camera_visor')
+    print("Tran_Matrix is:\n {}".format(Trans_Matrix))
 
 def check_object_pose(debug=False):
     """
@@ -507,7 +506,8 @@ def get_pose_in_camera():
 
 
 if __name__ == '__main__':
-    test_read_image()
+    test_get_Trans_Matrix()
+    # test_read_image()
     # test_get_camera_info()
     # test_get_object_pose()
     # check_object_pose()

@@ -259,6 +259,40 @@ class Make_Data:
 
         print("********Already Make the Scene_id :{} data********".format(scene_id))
 
+    #############################生成需要的信息####################################
+    def check_gazebo_sapien_view_pose(self):
+        """
+        这里面确定gazebo和sapien的label图片是对应的
+        :return:
+        """
+        sapien_bgr_image=cv.imread("temp_data/1-1-color.png")
+        gazebo_label_image=cv.imread("temp_data/1-1-label.png")
+
+        #label图片变换成3通道的
+        cv_image=gazebo_label_image.copy()
+        cv.normalize(cv_image,cv_image,255,0,cv.NORM_MINMAX)
+        cv_image=cv_image.astype(np.uint8)
+        color_map=cv.applyColorMap(cv_image,cv.COLORMAP_JET)
+
+        #两个图片融合起来
+        merge_image=cv.addWeighted(sapien_bgr_image,0.5,color_map,1,0)
+        cv.imshow("merge_image",merge_image)
+        cv.waitKey(0)
+
+    def check_object_pose(self):
+        """
+        读取物体的meta,,获取对应的xyz,另外对每个物体读取Pose,或取对应的world pose,看看最终是不是在一起的
+        :return:
+        """
+
+
+
+
+
+
+
+
+
 def make_data():
     if len(sys.argv)!=3:
         print("[Error] Please input the scenid HSV_MODE to the make_data()")
