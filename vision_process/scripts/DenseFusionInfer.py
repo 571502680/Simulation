@@ -8,6 +8,10 @@ Log:2020.9.14:
 Log:2020.9.15:
     整合了代码,避免代码太过复杂.
     SegNet采用np.argmax进行统计,与此同时,设置了一定的区域分割,从而确保没有太多其他参数
+
+Log:2020.2.27:
+    基于更改过的Read_Data和Make_Data,进行DenseFusion的执行
+
 """
 
 import argparse
@@ -29,7 +33,7 @@ from std_msgs.msg import Int8
 from gazebo_msgs.msg import ModelStates
 import tf.transformations as trans_tools
 import math
-sys.path.append("/root/ocrtoc_ws/src/vision_process/scripts")
+
 import Make_Data
 import Read_Data
 #DenseFusion库
@@ -44,7 +48,7 @@ class DenseFusion_Detector:
             rospy.init_node("DenseFusionInfer")
         #1:导入网络
         if model_path is None:
-            self.model_path="DenseFusion_Lib/models/sapien_posemodel_0.041.pth"
+            self.model_path="DenseFusion_Lib/models/sapien_posemodel_0.042.pth"
         else:
             self.model_path=model_path
 
@@ -54,7 +58,7 @@ class DenseFusion_Detector:
             self.refine_model_path=refine_model_path
         self.python_path=os.path.dirname(__file__)+"/"
         self.num_points=1000
-        self.num_obj=59
+        self.num_obj=79
         self.estimator = PoseNet(num_points=self.num_points, num_obj=self.num_obj)
         self.estimator.cuda()
         self.estimator.load_state_dict(torch.load(self.python_path+self.model_path))
@@ -112,20 +116,21 @@ class DenseFusion_Detector:
             class_id += 1
 
         #4:导入SegNet
-        self.segnet=SegNet(input_nbr=3,label_nbr=60)
+        self.segnet=SegNet(input_nbr=3,label_nbr=80)
         if segnet_path is None:
-            self.segnet_path="SegNet_Lib/models/segnet_sapien_0.061.pth"
+            self.segnet_path="SegNet_Lib/models/segnet_sapien_0.0054.pth"
         else:
             self.segnet_path=segnet_path
+        # self.segnet.load_state_dict(torch.load(self.python_path+self.segnet_path))
         self.segnet.load_state_dict(torch.load(self.python_path+self.segnet_path))
         self.segnet=self.segnet.cuda()
         self.norm_seg = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 
         #5:坐标系变换
         self.Trans_camera2world=np.array([[-0.6184985 ,  0.12796457, -0.77529651,  0.55712303],
-                                     [-0.14367474, -0.98843452, -0.04852593,  0.13329369],
-                                     [-0.77253944,  0.08137731,  0.62973054,  0.58269   ],
-                                     [ 0.        ,  0.        ,  0.        ,  1.        ]])
+                                          [-0.14367474, -0.98843452, -0.04852593,  0.13329369],
+                                          [-0.77253944,  0.08137731,  0.62973054,  0.58269   ],
+                                          [ 0.        ,  0.        ,  0.        ,  1.        ]])
 
 
 
@@ -167,16 +172,18 @@ class DenseFusion_Detector:
             mask=label_image[:,:,index]
             sum_mask=np.sum(mask>0)
 
-            if debug:
-                print("sum_mask is",sum_mask)
-                cv.imshow("mask",label_image[:,:,index])
-                cv.waitKey(0)
 
             if sum_mask<1500 or index==0:
                 label_image[:,:,index]=0#如果这一层的pixel数目不够多,则全部变为0
             else:#认为是目标图片,先做形态学闭操作填充内部,再做形态学开操作,滤掉周围零星点
                 label_image[:,:,index]=cv.morphologyEx(label_image[:,:,index],cv.MORPH_CLOSE,kernel=self.generate_kernel(20,20))
                 label_image[:,:,index]=cv.morphologyEx(label_image[:,:,index],cv.MORPH_OPEN,kernel=self.generate_kernel(20,20))
+
+            if debug:
+                print("sum_mask is",sum_mask)
+                if sum_mask>1500:
+                    cv.imshow("mask",label_image[:,:,index])
+                    cv.waitKey(0)
 
         #2:采用argmax得到最终的结果
         output_result=np.argmax(label_image,axis=2)
@@ -187,6 +194,7 @@ class DenseFusion_Detector:
         """
         送入bgr_image,得到语义分割的结果
         @param bgr_image:bgr图片
+        @param debug: 是否进行debug(即可视化每一层的结果)
         @return:语义分割之后的结果,输出size和bgr_image相同,但是Channel=1,像素中,多少值即对应了多少的像素
         """
         label_image=self.segnet_infer(bgr_image)
@@ -392,13 +400,12 @@ class DenseFusion_Detector:
         这里面用于看这个场景的识别结果
         @return:
         """
-        make_Data=Make_Data.Make_Data()
+        read_Data=Read_Data.Read_Data(read_images=True)
         rate=rospy.Rate(10)
         with torch.no_grad():
             while not rospy.is_shutdown():
-                make_Data.get_images()
-                if make_Data.color_image is not None and make_Data.depth_image is not None:
-                    pose_result=self.get_pose(make_Data.color_image,make_Data.depth_image,debug=debug)
+                if read_Data.bgr_image is not None and read_Data.depth_image is not None:
+                    pose_result=self.get_pose(read_Data.bgr_image,read_Data.depth_image,debug=debug)
                     print("The result is:",pose_result)
                     break
                 else:
@@ -459,13 +466,12 @@ class DenseFusion_Detector:
         用于发布Pose的位置
         @return:
         """
-        make_Data=Make_Data.Make_Data()
+        read_Data=Read_Data.Read_Data(read_images=True)
         rate=rospy.Rate(10)
         with torch.no_grad():
             while not rospy.is_shutdown():
-                make_Data.get_images()
-                if make_Data.color_image is not None and make_Data.depth_image is not None:
-                    pose_results=self.get_pose(make_Data.color_image,make_Data.depth_image)
+                if read_Data.bgr_image is not None and read_Data.depth_image is not None:
+                    pose_results=self.get_pose(read_Data.bgr_image,read_Data.depth_image)
                     poseinworld_result=self.get_worldframe_pose(pose_results)
                     objecd_id_list,poses_list=self.get_pubinfo(poseinworld_result)
                     modelStates=ModelStates()
@@ -483,7 +489,6 @@ class DenseFusion_Detector:
         if state==1:
             print("DenseFusion Get Stop Flag,pub node will stop")
             self.STOP_FLAG=True
-
 
     ###################################进行DenseFusion精度确定#######################################
     def compare_pose(self,true_pose,pose):
@@ -506,10 +511,10 @@ class DenseFusion_Detector:
         true_rot_rpy=np.array(trans_tools.euler_from_quaternion(true_rot))*180/math.pi
         predict_rot_rpy=np.array(trans_tools.euler_from_quaternion(predict_rot))*180/math.pi
 
-        print("true_trans:   ",true_trans)
-        print("preidct_trans:",predict_trans)
-        print("true rot rpy: ",true_rot_rpy)
-        print("predict rotrpy",predict_rot_rpy)
+        print("true_trans:  : {}".format(true_trans))
+        print("preidct_trans: {}".format(predict_trans))
+        print("true rot rpy : {}".format(true_rot))
+        print("predict rotrpy:{}".format(predict_rot))
 
         rot_dist=np.arccos(np.abs(true_rot.dot(predict_rot.T)))
 
@@ -517,26 +522,24 @@ class DenseFusion_Detector:
 
         return dist,rot_dist
 
-    def check_densefusion(self,scene_id="1-1"):
+    def check_densefusion(self,scene_id="1-1",debug=True):
         """
         这里面用于确定DenseFusion的姿态识别和目标的姿态识别之间的差距
         @param scene_id: 场景id,默认为1-1
         @return:
         """
-        read_Data=Read_Data.Read_Data()
-        make_Data=Make_Data.Make_Data()
+        read_Data=Read_Data.Read_Data(read_images=True)
         #获取Gazebo中读取的Pose
-        world_info_list=read_Data.get_world_info(scene_id=scene_id)
+        world_info_list,gazebo_name2true_name,gazebo_name_list=read_Data.get_world_info(scene_id=scene_id)
 
         #获取DenseFusion中识别的Pose
         rate=rospy.Rate(10)
         densefusion_Detector=DenseFusion_Detector()
         with torch.no_grad():
             while not rospy.is_shutdown():
-                make_Data.get_images()
-                if make_Data.color_image is not None and make_Data.depth_image is not None:
-                    pose_results=densefusion_Detector.get_pose(make_Data.color_image,make_Data.depth_image)
-                    poseinworld_result=self.get_worldframe_pose(pose_results)
+                if read_Data.bgr_image is not None and read_Data.depth_image is not None:
+                    pose_result=self.get_pose(read_Data.bgr_image,read_Data.depth_image,debug=debug)
+                    poseinworld_result=self.get_worldframe_pose(pose_result)
                     objecd_id_list,poses_list=self.get_pubinfo(poseinworld_result)
                     #比较之后得到结果就进行下一个场景,也跑一个auto_run进行解决
                     break
@@ -570,10 +573,12 @@ class DenseFusion_Detector:
         # print("average_rot_dist",average_rot_dist/len(world_info_list))
 
 
+
 if __name__ == '__main__':
     densefusion_Detector=DenseFusion_Detector(init_node=True)
     densefusion_Detector.pub_pose_array()
     # densefusion_Detector.check_densefusion("1-1")
     # densefusion_Detector.see_detect_result(debug=True)#用于查看这个场景的结果
+    # change_pth()
 
 

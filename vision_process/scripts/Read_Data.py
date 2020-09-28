@@ -99,7 +99,7 @@ class Read_YCB:
         return points
 
 class Read_Data:
-    def __init__(self,init_node=False,read_images=True,simulator="sapien"):
+    def __init__(self,init_node=False,read_images=False,simulator="sapien"):
         if init_node:
             rospy.init_node("Read_Data")
 
@@ -396,13 +396,12 @@ def test_read_image():
     用于测试读取图片函数
     @return:
     """
-    read_Data=Read_Data(init_node=True)
+    read_Data=Read_Data(init_node=True,read_images=True)
     while not rospy.is_shutdown():
         bgr_image,depth_image=read_Data.get_images()
         if bgr_image is not None:
             cv.imshow("bgr_iamge",bgr_image)
-            cv.imwrite("bgr_image.png",bgr_image)
-            break
+            cv.waitKey(3)
 
 def test_get_camera_info():
     read_Data=Read_Data(init_node=True)
@@ -428,7 +427,7 @@ def test_get_Trans_Matrix():
     @return:
     """
     read_Data=Read_Data(init_node=True)
-    Trans_Matrix=read_Data.get_T_Matrix(target_frame='kinect_camera_visor',source_frame='world')
+    Trans_Matrix=read_Data.get_T_Matrix(target_frame='base_link',source_frame='world')
     print("Tran_Matrix is:\n {}".format(Trans_Matrix))
 
 def check_object_pose(debug=False):

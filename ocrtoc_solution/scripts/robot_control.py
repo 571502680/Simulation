@@ -9,6 +9,10 @@ from trac_ik_python.trac_ik import IK
 from urdf_parser_py.urdf import URDF
 from kdl_parser import kdl_tree_from_urdf_model
 import PyKDL
+import sys
+
+# sys.modules.setdefaultencoding( "utf-8" )
+
 
 # msgs
 from std_msgs.msg import Int8
@@ -67,14 +71,20 @@ class Robot(object):
             JointTrajectory, queue_size=10)
 
         #transform world to base
-        self.trans_world2base=np.array([[  7.96326711e-04,  -9.99999683e-01,   0.00000000e+00,
-                  0.00000000e+00],
-               [  9.99999683e-01,   7.96326711e-04,   0.00000000e+00,
-                  2.40000000e-01],
-               [  0.00000000e+00,   0.00000000e+00,   1.00000000e+00,
-                  5.00000000e-03],
-               [  0.00000000e+00,   0.00000000e+00,   0.00000000e+00,
-                  1.00000000e+00]])
+        # self.trans_world2base=np.array([[  7.96326711e-04,  -9.99999683e-01,   0.00000000e+00,
+        #           0.00000000e+00],
+        #        [  9.99999683e-01,   7.96326711e-04,   0.00000000e+00,
+        #           2.40000000e-01],
+        #        [  0.00000000e+00,   0.00000000e+00,   1.00000000e+00,
+        #           5.00000000e-03],
+        #        [  0.00000000e+00,   0.00000000e+00,   0.00000000e+00,
+        #           1.00000000e+00]])
+
+        self.trans_world2base=np.array( [[  7.96326711e-04 , -9.99999683e-01 ,  0.00000000e+00 ,  0.00000000e+00],
+                                         [  9.99999683e-01 ,  7.96326711e-04 ,  0.00000000e+00 ,  2.40000000e-01],
+                                         [  0.00000000e+00 ,  0.00000000e+00 ,  1.00000000e+00 ,  5.00000000e-03],
+                                         [  0.00000000e+00 ,  0.00000000e+00 ,  0.00000000e+00 ,  1.00000000e+00]])
+
 
         #绕x轴的旋转180度矩阵
         self.trans_x180Matrix=np.array([[1,0,0,0],

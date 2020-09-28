@@ -13,8 +13,6 @@
   </joint> -->
 
 
-
-  <!-- 这一部分是Gazebo中定义的Pose的关系图,这个的坐标系变换就可以完成gazebo和sapien的对应了 -->
   <joint name="world_joint" type="fixed">
       <parent link="world"/>
       <child link="table"/>
@@ -27,8 +25,6 @@
       <child link = "base_link" />
       <origin xyz="0 -0.24 0.0" rpy="0.0 0.0 0" />
     </joint>
-<!-- 这一部分是Gazebo中定义的Pose的关系图,这个的坐标系变换就可以完成gazebo和sapien的对应了 -->
-
 
   <link name="table">
     <visual>

@@ -150,9 +150,9 @@ class Make_Data:
         """
         #1:调用需要使用的类
         if self.HSV_mode:
-            read_Data=Read_Data.Read_Data(init_node=True,simulator='gazebo')#HSV的轮廓还是需要Gazebo输出
+            read_Data=Read_Data.Read_Data(init_node=True,read_images=True,simulator='gazebo')#HSV的轮廓还是需要Gazebo输出
         else:
-            read_Data=Read_Data.Read_Data(init_node=True,simulator='sapien')#RGB必须由sapien输出
+            read_Data=Read_Data.Read_Data(init_node=True,read_images=True,simulator='sapien')#RGB必须由sapien输出
         print("********Begin Make the Scene_id :{}********".format(scene_id))
         while not rospy.is_shutdown():
             #2:获取图像,世界信息等

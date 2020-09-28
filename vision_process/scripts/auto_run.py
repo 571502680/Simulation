@@ -187,9 +187,11 @@ class Auto_MakeData:
         os.system("killall gzserver")
         os.system("rosclean purge -y")
 
-
     def compare_pose(self):
-
+        """
+        这里面进行label和rgb的比较,从而知道轮廓是否正确
+        :return:
+        """
         #1:获取所有场景id:
         all_scenes=glob.glob(self.python_path+"/ALi_Dataset/data/*-color.png")
         all_scenes_id=[]
@@ -200,7 +202,9 @@ class Auto_MakeData:
             all_scenes_id.append(scene_id)
         all_scenes_id.sort(key=lambda data:int(data[0])*10000+int(data.split('-')[1]))#按照排列顺序进行
 
-        for scene_id in all_scenes_id:
+        all_i=240
+        while all_i<len(all_scenes_id):
+            scene_id=all_scenes_id[all_i]
             image=cv.imread(self.python_path+"/ALi_Dataset/data/"+scene_id+"-color.png")
             label=cv.imread(self.python_path+"/ALi_Dataset/data/"+scene_id+"-label.png")
 
@@ -211,19 +215,29 @@ class Auto_MakeData:
             color_map=cv.applyColorMap(cv_image,cv.COLORMAP_JET)
 
             #两个图片融合起来
-            merge_image=cv.addWeighted(image,0.5,color_map,1,0)
+            merge_image=cv.addWeighted(image,0.5,color_map,0.5,0)
             cv.imshow("merge_image",merge_image)
             input_temp=cv.waitKey()
+            print("Now the Scene id is: {}".format(scene_id))
             if input_temp==100:#'d'
                 print("You input d to delete the scene:{}".format(scene_id))
+
             if input_temp==115:#'s'
                 print("You input s,Stop")
                 return
 
+            if input_temp==98:#'b'
+                print("You input b,See before image")
+                all_i=all_i-2
+
+            all_i=all_i+1
+
+
+
 
 if __name__ == '__main__':
     auto_MakeData=Auto_MakeData(HSV_MODE=False)
-    auto_MakeData.auto_run(stop_id='2-1')
+    auto_MakeData.auto_run(begin_id='3-45')
     # auto_MakeData.clean_dataset()
     # auto_MakeData.run_error_data()
     # auto_MakeData.compare_pose()
