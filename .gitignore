@@ -57,8 +57,10 @@ checkpoint_dir/
 *.pth
 temp*.py
 *.zip
+vision_process/scripts/ALi_Dataset
 vision_process/scripts/ALi_Dataset/data
 vision_process/scripts/ALi_Dataset/models
+
 
 
 
