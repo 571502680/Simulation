@@ -284,14 +284,9 @@ class Make_Data:
         读取物体的meta,,获取对应的xyz,另外对每个物体读取Pose,或取对应的world pose,看看最终是不是在一起的
         :return:
         """
-
-
-
-
-
-
-
-
+        meta=scio.loadmat(self.python_path+"/temp_data/1-1-meta.mat")
+        poses=meta['poses']
+        print(poses)
 
 def make_data():
     if len(sys.argv)!=3:
@@ -313,13 +308,20 @@ def make_data():
     sys.exit()
 
 def check_makecorrect(scene_id):
+    """
+    这里面主要确定pose是否正确,通过meta读取物体的pose(点云),然后通过仿真器获取物体的pose(axis),然后同时到open3d中显示
+    :param scene_id:
+    :return:
+    """
     make_Data=Make_Data(HSV_mode=True)
     read_YCB=Read_Data.Read_YCB(get_object_points=True)
+    read_Data=Read_Data.Read_Data(simulator='sapien')
 
     meta = scio.loadmat(make_Data.dataset_pth+'/{}-meta.mat'.format(scene_id))
     poses=meta['poses']
     cls_indexes=meta['cls_indexes']
 
+    #从meta中获取物体pose,进行点云显示
     show_points=[]
     axis_point=o3d.geometry.TriangleMesh.create_coordinate_frame(size=0.1)
     show_points.append(axis_point)
@@ -335,8 +337,20 @@ def check_makecorrect(scene_id):
         target_o3d.transform(temp)
         show_points.append(target_o3d)
 
+    #从世界坐标系中获取物体pose,进行显示
+    world_info_list,gazebo_name2true_name,gazebo_name_list=read_Data.get_world_info(scene_id=scene_id)
+    for object_info in world_info_list:
+        model_pose=object_info['model_pose']
+        model_pose_matrix=read_Data.get_matrix_from_modelpose(model_pose)
+        axis_point=o3d.geometry.TriangleMesh.create_coordinate_frame(size=0.1)
+        axis_point.transform(model_pose_matrix)
+        axis_point.transform(read_Data.Trans_world2camera)
+        show_points.append(axis_point)
+
     o3d.visualization.draw_geometries(show_points)
 
+
 if __name__ == '__main__':
+    # check_data()
     # check_makecorrect(scene_id='1-1')
     make_data()

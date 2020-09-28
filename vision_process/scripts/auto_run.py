@@ -15,7 +15,8 @@ import sys
 import time
 import datetime
 import glob
-
+import cv2 as cv
+import numpy as np
 class Auto_MakeData:
     def __init__(self,HSV_MODE):
         """
@@ -23,6 +24,7 @@ class Auto_MakeData:
         """
         self.HSV_MODE=HSV_MODE
         self.make_data_index_file=open('Make_Data_index.txt','a')
+        self.python_path=os.path.dirname(os.path.abspath(__file__))
         
 
     def add_txt_time(self):
@@ -186,11 +188,45 @@ class Auto_MakeData:
         os.system("rosclean purge -y")
 
 
+    def compare_pose(self):
+
+        #1:获取所有场景id:
+        all_scenes=glob.glob(self.python_path+"/ALi_Dataset/data/*-color.png")
+        all_scenes_id=[]
+        for scene in all_scenes:
+            file_name=scene.split('data/')[1]
+            index=file_name.rfind('-')
+            scene_id=file_name[:index]
+            all_scenes_id.append(scene_id)
+        all_scenes_id.sort(key=lambda data:int(data[0])*10000+int(data.split('-')[1]))#按照排列顺序进行
+
+        for scene_id in all_scenes_id:
+            image=cv.imread(self.python_path+"/ALi_Dataset/data/"+scene_id+"-color.png")
+            label=cv.imread(self.python_path+"/ALi_Dataset/data/"+scene_id+"-label.png")
+
+            #label图片变换成3通道的
+            cv_image=label.copy()
+            cv.normalize(cv_image,cv_image,255,0,cv.NORM_MINMAX)
+            cv_image=cv_image.astype(np.uint8)
+            color_map=cv.applyColorMap(cv_image,cv.COLORMAP_JET)
+
+            #两个图片融合起来
+            merge_image=cv.addWeighted(image,0.5,color_map,1,0)
+            cv.imshow("merge_image",merge_image)
+            input_temp=cv.waitKey()
+            if input_temp==100:#'d'
+                print("You input d to delete the scene:{}".format(scene_id))
+            if input_temp==115:#'s'
+                print("You input s,Stop")
+                return
+
+
 if __name__ == '__main__':
-    auto_MakeData=Auto_MakeData(HSV_MODE=True)
-    auto_MakeData.auto_run(begin_id='1-570',stop_id='2-1')
+    auto_MakeData=Auto_MakeData(HSV_MODE=False)
+    auto_MakeData.auto_run(stop_id='2-1')
     # auto_MakeData.clean_dataset()
     # auto_MakeData.run_error_data()
+    # auto_MakeData.compare_pose()
 
 
 

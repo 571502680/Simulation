@@ -130,6 +130,29 @@ class Read_Data:
         self.read_image_hsv=None
         self.last_hsv=None
 
+        if simulator=="sapien":
+            self.Trans_camera2world=np.array( [[-0.6184985 , 0.12796457,-0.77529651,0.55712303],
+                                               [-0.14367474,-0.98843452,-0.04852593,0.13329369],
+                                               [-0.77253944, 0.08137731, 0.62973054,0.58269   ],
+                                               [ 0.        , 0.        , 0.        ,1.        ]])
+
+            self.Trans_world2camera=np.array(  [[-0.6184985 ,-0.14367474,-0.77253944,0.8138817 ],
+                                                [ 0.12796457,-0.98843452, 0.08137731,0.01304234],
+                                                [-0.77529651,-0.04852593, 0.62973054,0.07146605],
+                                                [ 0.        , 0.        , 0.        ,1.        ]])
+
+        elif simulator=="gazebo":
+            self.Trans_camera2world=np.array([[-0.6184985 ,  0.12796457, -0.77529651,  0.55712303],
+                                              [-0.14367474, -0.98843452, -0.04852593,  0.13329369],
+                                              [-0.77253944,  0.08137731,  0.62973054,  0.58269   ],
+                                              [ 0.        ,  0.        ,  0.        ,  1.        ]])
+
+            self.Trans_world2camera=np.array(  [[-0.6184985 ,-0.14367474,-0.77253944,0.8138817 ],
+                                                [ 0.12796457,-0.98843452, 0.08137731,0.01304234],
+                                                [-0.77529651,-0.04852593, 0.62973054,0.07146605],
+                                                [ 0.        , 0.        , 0.        ,1.        ]])
+
+
     ####################################读取图片的函数##################################
     def depth_process_callback(self,data,see_image=False):
         """
@@ -220,7 +243,7 @@ class Read_Data:
         depth_sub=rospy.Subscriber("/kinect/depth/image_raw",Image,callback_lambda)
 
     def begin_get_image(self):
-        callback_lambda=lambda x:self.image_process_callback(x,see_image=True,read_HSV=True)
+        callback_lambda=lambda x:self.image_process_callback(x,see_image=False,read_HSV=False)
         image_sub=rospy.Subscriber("/kinect/color/image_raw",Image,callback_lambda)
 
     def begin_get_camera_info(self):
@@ -405,7 +428,7 @@ def test_get_Trans_Matrix():
     @return:
     """
     read_Data=Read_Data(init_node=True)
-    Trans_Matrix=read_Data.get_T_Matrix(target_frame='world',source_frame='kinect_camera_visor')
+    Trans_Matrix=read_Data.get_T_Matrix(target_frame='kinect_camera_visor',source_frame='world')
     print("Tran_Matrix is:\n {}".format(Trans_Matrix))
 
 def check_object_pose(debug=False):
