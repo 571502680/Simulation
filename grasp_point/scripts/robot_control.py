@@ -300,13 +300,14 @@ class Robot(object):
     def get_pickpose_from_pose(self,pose , x=0,y=0,z=0,degreeR=0,degreeP=math.pi,degreeY=0):
         """
         送入物体pose,获取所对应的抓取pose
-        直接认为抓取pose就是物体朝向反过来即可
-        之后还需要注意,如果物体的朝向是向下的,则从背面抓取(这个先不解决)
-        :param pose:直接乘上一个围绕x轴转180度的变换矩阵即可(当然也可以顺着y轴,但是先不管y轴)
-        :return:
+        xyz设置gripper沿物体方向的运动
+	rpy设置gripper相对于物体的变换角度
+        只考虑Z轴向上的物体
         """
         pose_Matrix=trans_tools.quaternion_matrix(pose[3:])
-        #might have some problem,will find out later
+        """
+        可能有点小问题，会改进
+	"""
         move_xyz = pose[:3] + np.array([-x*math.sin(euler[2]*180/math.pi)-y*math.cos(euler[2]*180/math.pi),-y*math.sin(euler[2]*180/math.pi)-x*math.cos(euler[2]*180/math.pi),z])
         pose_Matrix[0:3,3]=np.array(pose[:3].T)
 

@@ -47,9 +47,7 @@ class CommitSolution(object):
 
     def process_goal_pose(self,goal_object_list, goal_pose_list):
         """
-        将送入的pose_list变换为可以解析的list
-        :param goal_pose_list: goal中的pose_list
-        :return:
+	改变了原先的读取位置的方法，用字典代替列表
         """
         return_pose_list=[]
         for pose in goal_pose_list:
@@ -69,7 +67,7 @@ class CommitSolution(object):
             object_model_dir = self.models_dir + '/' + object_name
             rospy.loginfo("Object model dir: " + object_model_dir)
         rospy.sleep(1.0)
-
+	
         #获取目标场景中位置
         robot=robot_control.Robot()
         objects=robot_control.Objects(get_pose_from_gazebo=False)
@@ -83,7 +81,7 @@ class CommitSolution(object):
                 name=objects.names[i]
                 goal_pose=goal_pose_list.get(name)
 
-                #2:抓取物体并运动到目标位置
+                #2:抓取物体并运动到目标位置 
                 print("Traget is {},it's Pose is {}".format(objects.names[i],origin_pose))
 		if name in self.Need_to_Adjust:
         	    param = self.Need_to_Adjust.get(name)
@@ -108,7 +106,7 @@ class CommitSolution(object):
                     	print("DenseFusion Don't detect {}".format(name))
                     	continue
                 #只是用xyz,旋转角度使用grasp的角度
-                # place_pose[3:]=grasp_pose[3:]
+                # 改变了运动轨迹，去掉了多余的gethome，提高了上方点位置
                 robot.move_updown(place_pose,grasp=False,fast_vel=0.4,slow_vel=0.1)
             break
 
