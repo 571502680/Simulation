@@ -352,5 +352,5 @@ def check_makecorrect(scene_id):
 
 if __name__ == '__main__':
     # check_data()
-    # check_makecorrect(scene_id='1-1')
+    # check_makecorrect(scene_id='3-1')
     make_data()

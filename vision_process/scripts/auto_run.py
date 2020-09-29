@@ -17,6 +17,14 @@ import datetime
 import glob
 import cv2 as cv
 import numpy as np
+import scipy.io as scio
+import open3d as o3d
+
+import Read_Data
+import Make_Data
+
+
+
 class Auto_MakeData:
     def __init__(self,HSV_MODE):
         """
@@ -25,7 +33,6 @@ class Auto_MakeData:
         self.HSV_MODE=HSV_MODE
         self.make_data_index_file=open('Make_Data_index.txt','a')
         self.python_path=os.path.dirname(os.path.abspath(__file__))
-        
 
     def add_txt_time(self):
         self.make_data_index_file=open('Make_Data_index.txt','a')
@@ -232,15 +239,73 @@ class Auto_MakeData:
 
             all_i=all_i+1
 
+    def check_pose(self):
+        """
+        这里面是确定meta的pose是否生成正确
+        :return:
+        """
+        all_scenes=glob.glob(self.python_path+"/ALi_Dataset/data/*-color.png")
+        all_scenes_id=[]
+        for scene in all_scenes:
+            file_name=scene.split('data/')[1]
+            index=file_name.rfind('-')
+            scene_id=file_name[:index]
+            all_scenes_id.append(scene_id)
+        all_scenes_id.sort(key=lambda data:int(data[0])*10000+int(data.split('-')[1]))#按照排列顺序进行
+
+        for scene_id in all_scenes_id:
+            #开启对应的sapien
+            os.system("roslaunch ocrtoc_task bringup_simulator.launch scenes:={} &".format(scene_id))
+            time.sleep(5)
+            print("*"*50)
+            make_Data=Make_Data.Make_Data(HSV_mode=True)
+            read_YCB=Read_Data.Read_YCB(get_object_points=True)
+            read_Data=Read_Data.Read_Data(simulator='sapien')
+
+            meta = scio.loadmat(make_Data.dataset_pth+'/{}-meta.mat'.format(scene_id))
+
+
+            poses=meta['poses']
+            print(poses)
+            cls_indexes=meta['cls_indexes']
+
+            #从meta中获取物体pose,进行点云显示
+            show_points=[]
+            axis_point=o3d.geometry.TriangleMesh.create_coordinate_frame(size=0.1)
+            show_points.append(axis_point)
+            for i,class_id in enumerate(cls_indexes[0]):
+                true_name=make_Data.objects_names[class_id-1]
+                temp=np.zeros((4,4))
+                pose=poses[:,:,i]
+                temp[0:3,:]=pose
+                temp[3,:]=[0,0,0,1]
+                points=read_YCB.objects_points[true_name]
+                target_o3d=o3d.geometry.PointCloud()
+                target_o3d.points=o3d.utility.Vector3dVector(points)
+                target_o3d.transform(temp)
+                show_points.append(target_o3d)
+
+            #从世界坐标系中获取物体pose,进行显示
+            world_info_list,gazebo_name2true_name,gazebo_name_list=read_Data.get_world_info(scene_id=scene_id)
+            for object_info in world_info_list:
+                model_pose=object_info['model_pose']
+                model_pose_matrix=read_Data.get_matrix_from_modelpose(model_pose)
+                axis_point=o3d.geometry.TriangleMesh.create_coordinate_frame(size=0.1)
+                axis_point.transform(model_pose_matrix)
+                axis_point.transform(read_Data.Trans_world2camera)
+                show_points.append(axis_point)
+
+            o3d.visualization.draw_geometries(show_points)
 
 
 
 if __name__ == '__main__':
-    auto_MakeData=Auto_MakeData(HSV_MODE=True)
-    auto_MakeData.auto_run(begin_id='4-1')
+    auto_MakeData=Auto_MakeData(HSV_MODE=False)
+    auto_MakeData.auto_run(begin_id='2-78')
     # auto_MakeData.clean_dataset()
     # auto_MakeData.run_error_data()
     # auto_MakeData.compare_pose()
+    # auto_MakeData.check_pose()
 
 
 

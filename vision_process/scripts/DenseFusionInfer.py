@@ -118,7 +118,7 @@ class DenseFusion_Detector:
         #4:导入SegNet
         self.segnet=SegNet(input_nbr=3,label_nbr=80)
         if segnet_path is None:
-            self.segnet_path="SegNet_Lib/models/segnet_sapien_0.0054.pth"
+            self.segnet_path="SegNet_Lib/models/segnet_sapien_0.021.pth"
         else:
             self.segnet_path=segnet_path
         # self.segnet.load_state_dict(torch.load(self.python_path+self.segnet_path))
@@ -325,7 +325,6 @@ class DenseFusion_Detector:
                 #3.3:获取点云的索引点
                 index = torch.LongTensor([object_id - 1])#这个用于选取点云参数
 
-
                 #4:将值送入CUDA中
                 cloud = Variable(cloud).cuda()
                 choose = Variable(choose).cuda()
@@ -345,19 +344,14 @@ class DenseFusion_Detector:
                 my_r = pred_r[0][which_max[0]].view(-1).cpu().data.numpy()
                 my_t = (points + pred_t)[which_max[0]].view(-1).cpu().data.numpy()
 
-
-                #在这里尝试改变四元数顺序,看看能不能解决问题
-                # my_r=np.array([my_r[3],my_r[]])
-                #在这里尝试改变四元数顺序,看看能不能解决问题
-
-
                 save_result_list.append({'object_id':object_id,'rot':my_r,'trans':my_t})
             except:
                 print("[warning],DenseFusion Detect Failed")
 
-
         if debug:
             show_points=[]
+            axis_point=o3d.geometry.TriangleMesh.create_coordinate_frame(size=0.1)
+            show_points.append(axis_point)
             cv.imshow("show_image",show_image)
             for result in save_result_list:
                 object_id=result['object_id']
@@ -406,7 +400,7 @@ class DenseFusion_Detector:
             while not rospy.is_shutdown():
                 if read_Data.bgr_image is not None and read_Data.depth_image is not None:
                     pose_result=self.get_pose(read_Data.bgr_image,read_Data.depth_image,debug=debug)
-                    print("The result is:",pose_result)
+                    print("The result is:\n {}".format(pose_result))
                     break
                 else:
                     print('[Warning] color_image not exist')
@@ -482,7 +476,7 @@ class DenseFusion_Detector:
                     print('[Warning] color_image not exist')
                 rate.sleep()
                 if self.STOP_FLAG:
-                    break
+                    return
 
     def update_detect_state(self,data):
         state=data.data
@@ -572,13 +566,11 @@ class DenseFusion_Detector:
         # print("average_dist:",average_dist/len(world_info_list))
         # print("average_rot_dist",average_rot_dist/len(world_info_list))
 
-
-
 if __name__ == '__main__':
     densefusion_Detector=DenseFusion_Detector(init_node=True)
-    densefusion_Detector.pub_pose_array()
-    # densefusion_Detector.check_densefusion("1-1")
-    # densefusion_Detector.see_detect_result(debug=True)#用于查看这个场景的结果
-    # change_pth()
+    densefusion_Detector.pub_pose_array()#发布所有物体Pose
+    # densefusion_Detector.check_densefusion("1-1")#确定场景识别精度
+    # densefusion_Detector.see_detect_result(debug=True)#用于查看这个场景的识别结果
+    # change_pth()#更改网络zip包
 
 

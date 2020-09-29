@@ -25,6 +25,7 @@ import quaternion
 from kdl_conversions import *
 #transform
 import tf.transformations as trans_tools
+import Read_Data
 
 class Robot(object):
     def __init__(self, init_node=False, node_name='test', base_link ="world", tip_link = "robotiq_2f_85_ee_link"):
@@ -71,15 +72,6 @@ class Robot(object):
             JointTrajectory, queue_size=10)
 
         #transform world to base
-        # self.trans_world2base=np.array([[  7.96326711e-04,  -9.99999683e-01,   0.00000000e+00,
-        #           0.00000000e+00],
-        #        [  9.99999683e-01,   7.96326711e-04,   0.00000000e+00,
-        #           2.40000000e-01],
-        #        [  0.00000000e+00,   0.00000000e+00,   1.00000000e+00,
-        #           5.00000000e-03],
-        #        [  0.00000000e+00,   0.00000000e+00,   0.00000000e+00,
-        #           1.00000000e+00]])
-
         self.trans_world2base=np.array( [[  7.96326711e-04 , -9.99999683e-01 ,  0.00000000e+00 ,  0.00000000e+00],
                                          [  9.99999683e-01 ,  7.96326711e-04 ,  0.00000000e+00 ,  2.40000000e-01],
                                          [  0.00000000e+00 ,  0.00000000e+00 ,  1.00000000e+00 ,  5.00000000e-03],
@@ -522,7 +514,7 @@ def test_gripper():
     :return:
     """
     robot=Robot(init_node=True)
-    objects=Objects(get_pose_from_gazebo=False)#从Gazebo中获取Pose
+    objects=Objects(get_pose_from_gazebo=True)#从Gazebo中获取Pose
     while not rospy.is_shutdown():
         robot.getpose_home(t=3)
         print("Ready to get the Pose")
@@ -543,24 +535,27 @@ def test_gripper():
             robot.move_updown(grasp_pose,grasp=False,fast_vel=0.4,slow_vel=0.1)
             print("Move to {}".format(objects.names[i]))
 
-
-
 def test_sapien():
     robot=Robot(init_node=True)
+    read_Data=Read_Data.Read_Data()
     while not rospy.is_shutdown():
-        robot.getpose_home(t=3)
-        print("Ready to get the Pose")
-        robot.home(t=1)
-        #更改一下pose
-        pose=np.array([0.16,-0.14,0.01,0.48,0,0,0.87])
-        grasp_pose=robot.get_pickpose_from_pose(pose)#Z轴翻转获取物体的抓取Pose
-        print("Grasp Pose is",grasp_pose)
-        robot.gripper_control(angle=0,force=0)
-        robot.move_updown(grasp_pose,grasp=True)
-        robot.home(t=1)
-        robot.move_updown(grasp_pose,grasp=False)
-        break
+        poses=[]
 
+        world_info_list,gazebo_name2true_name,gazebo_name_list=read_Data.get_world_info()
+        for object_info in world_info_list:
+            model_pose=object_info['model_pose']
+            poses.append(model_pose)
+
+        for model_pose in poses:
+            pose=np.array([model_pose.position.x,model_pose.position.y,model_pose.position.z,model_pose.orientation.x,model_pose.orientation.y,model_pose.orientation.z,model_pose.orientation.w])
+            grasp_pose=robot.get_pickpose_from_pose(pose)#Z轴翻转获取物体的抓取Pose
+            print("Grasp Pose is",grasp_pose)
+            robot.gripper_control(angle=0,force=0)
+            robot.move_updown(grasp_pose,grasp=True)
+            robot.home(t=1)
+            robot.move_updown(grasp_pose,grasp=False)
+
+        break
 
 def move_home():
     """
@@ -574,9 +569,9 @@ def move_home():
 
 
 if __name__ == '__main__':
-    # test_sapien()
+    test_sapien()
     # test_gripper()
-    move_home()
+    # move_home()
 
 
 
