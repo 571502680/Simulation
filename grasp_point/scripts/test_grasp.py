@@ -11,18 +11,7 @@ from gazebo_msgs.srv import *
 import quaternion
 import tf.transformations as trans_tools
 import math
-'''
-box1 pudding_box  default
-box2 wood_block  default
-box3 jenga  default
 
-can1 potted_meat_can  need to adjust Pi/2
-can2 master_chef_can   default
-
-
-
-
-'''
 modellist = [['bottle1','bleach_cleanser'],['bottle2','mustard_bottle'],['toy1','foam_brick'],['toy2','d_toy_airplane'],['can1','tomato_soup_can'],['can2','master_chef_can'],['box1','wood_block'],['box2','rubiks_cube'],['box3','gelatin_box'],['box4','pudding_box']]
 
 modellist2 = [['box2','jenga']]
@@ -47,9 +36,7 @@ class Objects1(object):
         self.xyzqua[:3] = np.array([self.state.pose.position.x,self.state.pose.position.y, self.state.pose.position.z])
         self.xyzqua[3:] = np.array([self.state.pose.orientation.x, self.state.pose.orientation.y, self.state.pose.orientation.z,
                      self.state.pose.orientation.w ] )
-        #self.xyz = (self.state.pose.position.x, self.state.pose.position.y, self.state.pose.position.z)
-        #print(self.xyzqua)
-        #print(self.xyz)
+   
 
 def get_pickpose_from_pose(pose, x=0,y=0,z=0,degreeR=0,degreeP=math.pi,degreeY=0):
     print(pose)
@@ -88,16 +75,3 @@ for model1 in modellist2:
 
 rospy.sleep(4)
 
-# print range(1,4)
-# print(ur.q)
-# print(ur.p)
-# ur.sin_test()
-# rospy.sleep(1.0)
-# print(ur._num_jnts)
-
-# %%
-# print obj.x[1]
-
-
-
-# %%
