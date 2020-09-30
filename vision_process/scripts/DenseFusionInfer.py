@@ -48,7 +48,7 @@ class DenseFusion_Detector:
             rospy.init_node("DenseFusionInfer")
         #1:导入网络
         if model_path is None:
-            self.model_path="DenseFusion_Lib/models/sapien_posemodel_0.042.pth"
+            self.model_path="DenseFusion_Lib/models/sapien_posemodel_0.030.pth"
         else:
             self.model_path=model_path
 

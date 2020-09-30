@@ -10,7 +10,7 @@ def change_pose_pth():
     这里面用于更换torch(从一个zip的到原始的pth)
     :return:
     """
-    model_path="DenseFusion_Lib/models/sapien_posemodel_0.042.pth"
+    model_path="DenseFusion_Lib/models/sapien_posemodel_0.030.pth"
     python_path=os.path.dirname(os.path.abspath(__file__))
     estimator = PoseNet(num_points=1000, num_obj=79)
     estimator.cuda()
@@ -33,5 +33,5 @@ def change_segnet_pth():
     print("Saved")
 
 if __name__ == '__main__':
-    # change_pose_pth()
-    change_segnet_pth()
+    change_pose_pth()
+    # change_segnet_pth()
