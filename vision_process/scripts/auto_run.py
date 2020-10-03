@@ -20,8 +20,8 @@ import numpy as np
 import scipy.io as scio
 import open3d as o3d
 
-import Read_Data
-import Make_Data
+# import Read_Data
+# import Make_Data
 
 
 
@@ -194,40 +194,74 @@ class Auto_MakeData:
         os.system("killall gzserver")
         os.system("rosclean purge -y")
 
-    def compare_pose(self):
+    def compare_images(self,data_path=None,check_pose=False):
         """
         这里面进行label和rgb的比较,从而知道轮廓是否正确
         :return:
         """
         #1:获取所有场景id:
-        all_scenes=glob.glob(self.python_path+"/ALi_Dataset/data/*-color.png")
+        data_path="/ALi_Dataset/data_1700/"
+
+        if data_path is None:
+            data_path="/ALi_Dataset/data/"
+        all_scenes=glob.glob(self.python_path+data_path+"*-color.png")
         all_scenes_id=[]
         for scene in all_scenes:
-            file_name=scene.split('data/')[1]
+            file_name=scene.split('data_1700/')[1]
             index=file_name.rfind('-')
             scene_id=file_name[:index]
             all_scenes_id.append(scene_id)
         all_scenes_id.sort(key=lambda data:int(data[0])*10000+int(data.split('-')[1]))#按照排列顺序进行
 
-        all_i=240
+        all_i=750
         while all_i<len(all_scenes_id):
+            #2:获取对应场景
             scene_id=all_scenes_id[all_i]
-            image=cv.imread(self.python_path+"/ALi_Dataset/data/"+scene_id+"-color.png")
-            label=cv.imread(self.python_path+"/ALi_Dataset/data/"+scene_id+"-label.png")
+            print("*************  Now the Scene id is: {}  *************".format(scene_id))
+            image_path=self.python_path+data_path+scene_id+"-color.png"
+            depth_path=self.python_path+data_path+scene_id+"-depth.png"
+            label_path=self.python_path+data_path+scene_id+"-label.png"
+            meta_path=self.python_path+data_path+scene_id+"-meta.mat"
+            if (not os.path.exists(image_path)) and (not os.path.exists(depth_path)) and (not os.path.exists(label_path)) and (not os.path.exists(meta_path)):
+                print("[Warning] This scene_id not exist ,continue")
+                all_i=all_i-2
+                continue
+            else:
+                if os.path.exists(image_path) and  os.path.exists(depth_path) and os.path.exists(label_path) and os.path.exists(meta_path):
+                    pass
+                else:
+                    print("[Error] This scene_id lack one of the file")
+            image=cv.imread(image_path)
+            label=cv.imread(label_path)
 
-            #label图片变换成3通道的
+            #3:color和label进行匹配看是否有问题
+            # label图片变换成3通道的
             cv_image=label.copy()
+            cv_image[cv_image==0]=1000
             cv.normalize(cv_image,cv_image,255,0,cv.NORM_MINMAX)
             cv_image=cv_image.astype(np.uint8)
-            color_map=cv.applyColorMap(cv_image,cv.COLORMAP_JET)
+            color_map=cv.applyColorMap(cv_image,cv.COLORMAP_COOL)
 
             #两个图片融合起来
-            merge_image=cv.addWeighted(image,0.5,color_map,0.5,0)
+            merge_image=cv.addWeighted(image,0.2,color_map,0.7,0)
             cv.imshow("merge_image",merge_image)
             input_temp=cv.waitKey()
-            print("Now the Scene id is: {}".format(scene_id))
+
+            #4:使用check_pose查看位置是否有问题
+            if check_pose:
+                pass
+
+            #5:基于输入文件删除
             if input_temp==100:#'d'
-                print("You input d to delete the scene:{}".format(scene_id))
+                print(" Double d to delete the scene:{}".format(scene_id))
+                double_check=cv.waitKey()
+                print("     Double check ,you will delete scene:{}".format(scene_id))
+                if double_check==100:
+                    os.remove(image_path)
+                    os.remove(depth_path)
+                    os.remove(label_path)
+                    os.remove(meta_path)
+                    print("                 Delete already!")
 
             if input_temp==115:#'s'
                 print("You input s,Stop")
@@ -297,15 +331,36 @@ class Auto_MakeData:
 
             o3d.visualization.draw_geometries(show_points)
 
+    def get_train_list(self):
+        """
+        这里面用于获取训练数据
+        :return:
+        """
+        all_scenes=glob.glob(self.python_path+"/ALi_Dataset/data_1700_clean/*-color.png")
+        all_scenes_id=[]
+        for scene in all_scenes:
+            file_name=scene.split('data_1700_clean/')[1]
+            index=file_name.rfind('-')
+            scene_id=file_name[:index]
+            all_scenes_id.append(scene_id)
+        all_scenes_id.sort(key=lambda data:int(data[0])*10000+int(data.split('-')[1]))#按照排列顺序进行
+
+        for scene_id in all_scenes_id:
+            id=scene_id.split('-')[1]
+            # if int(id)>250:
+            #     continue
+            print(scene_id)
+
 
 
 if __name__ == '__main__':
     auto_MakeData=Auto_MakeData(HSV_MODE=False)
-    auto_MakeData.auto_run(begin_id='2-78')
+    # auto_MakeData.auto_run(begin_id='4-1')
     # auto_MakeData.clean_dataset()
     # auto_MakeData.run_error_data()
-    # auto_MakeData.compare_pose()
+    # auto_MakeData.compare_images()
     # auto_MakeData.check_pose()
+    auto_MakeData.get_train_list()
 
 
 

@@ -1,0 +1,550 @@
+*****************object name is :c_lego_duplo ***********************
+ Good Object
+        it Z are:
+[{'scene_id': '2-200', 'z_times': 30, 'z_value': 0.011981488205492496}]
+
+
+
+*****************object name is :tuna_fish_can ***********************
+ This Object z is not only one
+        it Z are:
+[{'scene_id': '1-74', 'z_times': 137, 'z_value': 0.008520000614225864}, {'scene_id': '1-82', 'z_times': 1, 'z_value': 0.11081226915121078}, {'scene_id': '2-59', 'z_times': 1, 'z_value': 0.035350505262613297}, {'scene_id': '2-98', 'z_times': 1, 'z_value': 0.021523067727684975}]
+
+
+
+*****************object name is :large_clamp ***********************
+ This Object z is not only one
+        it Z are:
+[{'scene_id': '2-123', 'z_times': 1, 'z_value': 0.0523681715130806}, {'scene_id': '2-171', 'z_times': 26, 'z_value': 0.01850387081503868}, {'scene_id': '2-131', 'z_times': 1, 'z_value': 0.03518473356962204}, {'scene_id': '2-173', 'z_times': 1, 'z_value': 0.08840297162532806}, {'scene_id': '2-178', 'z_times': 1, 'z_value': 0.02959270216524601}]
+
+
+
+*****************object name is :correction_fuid ***********************
+ This Object z is not only one
+        it Z are:
+[{'scene_id': '2-223', 'z_times': 48, 'z_value': 0.00966787151992321}, {'scene_id': '2-208', 'z_times': 2, 'z_value': 0.01703459955751896}]
+
+
+
+*****************object name is :a_lego_duplo ***********************
+ Good Object
+        it Z are:
+[{'scene_id': '2-66', 'z_times': 30, 'z_value': 0.012111889198422432}]
+
+
+
+*****************object name is :cup_small ***********************
+ This object not exist z
+        it Z are:
+[]
+
+
+
+*****************object name is :h_cups ***********************
+ Good Object
+        it Z are:
+[{'scene_id': '2-110', 'z_times': 70, 'z_value': 0.037758078426122665}]
+
+
+
+*****************object name is :b_lego_duplo ***********************
+ Good Object
+        it Z are:
+[{'scene_id': '2-152', 'z_times': 40, 'z_value': 0.021814994513988495}]
+
+
+
+*****************object name is :scissors ***********************
+ This object not exist z
+        it Z are:
+[]
+
+
+
+*****************object name is :redbull ***********************
+ Good Object
+        it Z are:
+[{'scene_id': '1-201', 'z_times': 50, 'z_value': 0.04638563469052315}]
+
+
+
+*****************object name is :extra_large_clamp ***********************
+ This Object z is not only one
+        it Z are:
+[{'scene_id': '2-110', 'z_times': 2, 'z_value': 0.07013119757175446}, {'scene_id': '2-115', 'z_times': 1, 'z_value': 0.061731308698654175}, {'scene_id': '2-152', 'z_times': 16, 'z_value': 0.018066221848130226}, {'scene_id': '2-114', 'z_times': 7, 'z_value': 0.03655879199504852}, {'scene_id': '2-101', 'z_times': 2, 'z_value': 0.043505702167749405}, {'scene_id': '2-155', 'z_times': 2, 'z_value': 0.030835218727588654}]
+
+
+
+*****************object name is :b_cups ***********************
+ Good Object
+        it Z are:
+[{'scene_id': '2-110', 'z_times': 30, 'z_value': 0.031996093690395355}]
+
+
+
+*****************object name is :d_cups ***********************
+ Good Object
+        it Z are:
+[{'scene_id': '2-200', 'z_times': 30, 'z_value': 0.0346590057015419}]
+
+
+
+*****************object name is :medium_clamp ***********************
+ This Object z is not only one
+        it Z are:
+[{'scene_id': '2-200', 'z_times': 28, 'z_value': 0.013607271015644073}, {'scene_id': '2-196', 'z_times': 1, 'z_value': 0.054192401468753815}, {'scene_id': '2-150', 'z_times': 1, 'z_value': 0.08185677230358124}]
+
+
+
+*****************object name is :conditioner ***********************
+ Good Object
+        it Z are:
+[{'scene_id': '2-211', 'z_times': 30, 'z_value': 0.08122973889112473}]
+
+
+
+*****************object name is :potted_meat_can ***********************
+ This Object z is not only one
+        it Z are:
+[{'scene_id': '1-55', 'z_times': 77, 'z_value': 0.04212801530957222}, {'scene_id': '1-69', 'z_times': 2, 'z_value': 0.027471227571368217}, {'scene_id': '2-75', 'z_times': 1, 'z_value': 0.04969043284654617}]
+
+
+
+*****************object name is :green_arrow ***********************
+ Good Object
+        it Z are:
+[{'scene_id': '2-223', 'z_times': 30, 'z_value': 0.03896164521574974}]
+
+
+
+*****************object name is :pudding_box ***********************
+ This Object z is not only one
+        it Z are:
+[{'scene_id': '1-55', 'z_times': 204, 'z_value': 0.009862907230854034}, {'scene_id': '1-164', 'z_times': 2, 'z_value': 0.022288188338279724}, {'scene_id': '2-28', 'z_times': 1, 'z_value': 0.027721717953681946}, {'scene_id': '2-14', 'z_times': 2, 'z_value': 0.03986290469765663}, {'scene_id': '2-23', 'z_times': 1, 'z_value': 0.06720022857189178}]
+
+
+
+*****************object name is :wooden_puzzle2 ***********************
+ Good Object
+        it Z are:
+[{'scene_id': '1-201', 'z_times': 60, 'z_value': 0.01691773161292076}]
+
+
+
+*****************object name is :hello_kitty_cup ***********************
+ Good Object
+        it Z are:
+[{'scene_id': '2-211', 'z_times': 30, 'z_value': 0.05002708360552788}]
+
+
+
+*****************object name is :master_chef_can ***********************
+ This Object z is not only one
+        it Z are:
+[{'scene_id': '1-74', 'z_times': 99, 'z_value': 0.035301994532346725}, {'scene_id': '1-19', 'z_times': 1, 'z_value': 0.054093241691589355}]
+
+
+
+*****************object name is :cracker_box ***********************
+ This Object z is not only one
+        it Z are:
+[{'scene_id': '2-9', 'z_times': 147, 'z_value': 0.009120450355112553}, {'scene_id': '1-151', 'z_times': 1, 'z_value': 0.0283981841057539}, {'scene_id': '2-52', 'z_times': 1, 'z_value': 0.021153368055820465}, {'scene_id': '2-57', 'z_times': 1, 'z_value': 0.03912045806646347}]
+
+
+
+*****************object name is :pitcher_base ***********************
+ This object not exist z
+        it Z are:
+[]
+
+
+
+*****************object name is :d_toy_airplane ***********************
+ This Object z is not only one
+        it Z are:
+[{'scene_id': '2-123', 'z_times': 57, 'z_value': 0.03333863988518715}, {'scene_id': '2-144', 'z_times': 1, 'z_value': 0.0420057512819767}, {'scene_id': '2-28', 'z_times': 2, 'z_value': 0.012038400396704674}]
+
+
+
+*****************object name is :doraemon_spoon ***********************
+ This Object z is not only one
+        it Z are:
+[{'scene_id': '2-223', 'z_times': 45, 'z_value': 0.014736367389559746}, {'scene_id': '2-206', 'z_times': 3, 'z_value': 0.0049419160932302475}, {'scene_id': '2-202', 'z_times': 2, 'z_value': 0.023920930922031403}]
+
+
+
+*****************object name is :jenga ***********************
+ This Object z is not only one
+        it Z are:
+[{'scene_id': '1-55', 'z_times': 150, 'z_value': 0.014999997802078724}, {'scene_id': '2-64', 'z_times': 4, 'z_value': 0.02984737977385521}, {'scene_id': '2-41', 'z_times': 3, 'z_value': 0.02305731549859047}, {'scene_id': '2-61', 'z_times': 1, 'z_value': 0.07624462991952896}, {'scene_id': '2-98', 'z_times': 1, 'z_value': 0.04438791051506996}, {'scene_id': '2-93', 'z_times': 1, 'z_value': 0.085603266954422}]
+
+
+
+*****************object name is :f_lego_duplo ***********************
+ This Object z is not only one
+        it Z are:
+[{'scene_id': '2-110', 'z_times': 38, 'z_value': 0.021840089932084084}, {'scene_id': '2-128', 'z_times': 1, 'z_value': 0.016202928498387337}, {'scene_id': '2-119', 'z_times': 1, 'z_value': 0.030467728152871132}]
+
+
+
+*****************object name is :bowl ***********************
+ This object not exist z
+        it Z are:
+[]
+
+
+
+*****************object name is :prism ***********************
+ This Object z is not only one
+        it Z are:
+[{'scene_id': '2-110', 'z_times': 49, 'z_value': 0.016085000708699226}, {'scene_id': '2-114', 'z_times': 1, 'z_value': 0.02487756870687008}]
+
+
+
+*****************object name is :phillips_screwdriver ***********************
+ This Object z is not only one
+        it Z are:
+[{'scene_id': '2-115', 'z_times': 56, 'z_value': 0.015409664250910282}, {'scene_id': '2-131', 'z_times': 1, 'z_value': 0.08705729991197586}, {'scene_id': '2-126', 'z_times': 3, 'z_value': 0.023402852937579155}]
+
+
+
+*****************object name is :nine_hole_peg_test ***********************
+ This Object z is not only one
+        it Z are:
+[{'scene_id': '2-110', 'z_times': 39, 'z_value': 0.010385504923760891}, {'scene_id': '2-136', 'z_times': 1, 'z_value': 0.08604542165994644}]
+
+
+
+*****************object name is :mug ***********************
+ This object not exist z
+        it Z are:
+[]
+
+
+
+*****************object name is :e_toy_airplane ***********************
+ This Object z is not only one
+        it Z are:
+[{'scene_id': '2-9', 'z_times': 47, 'z_value': 0.033212240785360336}, {'scene_id': '2-200', 'z_times': 2, 'z_value': 0.04165774583816528}, {'scene_id': '2-64', 'z_times': 1, 'z_value': 0.028053531423211098}]
+
+
+
+*****************object name is :g_lego_duplo ***********************
+ Good Object
+        it Z are:
+[{'scene_id': '2-165', 'z_times': 50, 'z_value': 0.014963014982640743}]
+
+
+
+*****************object name is :realsense_box ***********************
+ Good Object
+        it Z are:
+[{'scene_id': '1-201', 'z_times': 20, 'z_value': 0.027316011488437653}]
+
+
+
+*****************object name is :d_lego_duplo ***********************
+ Good Object
+        it Z are:
+[{'scene_id': '2-115', 'z_times': 40, 'z_value': 0.021739784628152847}]
+
+
+
+*****************object name is :tea_can1 ***********************
+ This object not exist z
+        it Z are:
+[]
+
+
+
+*****************object name is :banana ***********************
+ This object not exist z
+        it Z are:
+[]
+
+
+
+*****************object name is :knife ***********************
+ This object not exist z
+        it Z are:
+[]
+
+
+
+*****************object name is :foam_brick ***********************
+ This Object z is not only one
+        it Z are:
+[{'scene_id': '2-144', 'z_times': 39, 'z_value': 0.02592279389500618}, {'scene_id': '2-138', 'z_times': 1, 'z_value': 0.09502536803483963}]
+
+
+
+*****************object name is :fork ***********************
+ This object not exist z
+        it Z are:
+[]
+
+
+
+*****************object name is :plate ***********************
+ This object not exist z
+        it Z are:
+[]
+
+
+
+*****************object name is :b_toy_airplane ***********************
+ This Object z is not only one
+        it Z are:
+[{'scene_id': '2-110', 'z_times': 28, 'z_value': 0.008488936349749565}, {'scene_id': '2-180', 'z_times': 1, 'z_value': 0.07554157078266144}, {'scene_id': '2-178', 'z_times': 1, 'z_value': 0.06660706549882889}]
+
+
+
+*****************object name is :c_cups ***********************
+ Good Object
+        it Z are:
+[{'scene_id': '2-171', 'z_times': 30, 'z_value': 0.03345879539847374}]
+
+
+
+*****************object name is :power_drill ***********************
+ This Object z is not only one
+        it Z are:
+[{'scene_id': '2-123', 'z_times': 26, 'z_value': 0.027312450110912323}, {'scene_id': '2-129', 'z_times': 3, 'z_value': 0.04098768159747124}, {'scene_id': '2-159', 'z_times': 1, 'z_value': 0.04685473069548607}]
+
+
+
+*****************object name is :pepsi ***********************
+ This Object z is not only one
+        it Z are:
+[{'scene_id': '1-201', 'z_times': 49, 'z_value': 0.0744963064789772}, {'scene_id': '1-243', 'z_times': 1, 'z_value': 0.029225565493106842}]
+
+
+
+*****************object name is :j_cups ***********************
+ Good Object
+        it Z are:
+[{'scene_id': '2-115', 'z_times': 20, 'z_value': 0.037989042699337006}]
+
+
+
+*****************object name is :pan_tefal ***********************
+ This object not exist z
+        it Z are:
+[]
+
+
+
+*****************object name is :hello_kitty_plate ***********************
+ This Object z is not only one
+        it Z are:
+[{'scene_id': '2-223', 'z_times': 28, 'z_value': 0.008471700362861156}, {'scene_id': '2-211', 'z_times': 5, 'z_value': 0.02003185637295246}, {'scene_id': '2-221', 'z_times': 2, 'z_value': 0.05101234093308449}, {'scene_id': '2-225', 'z_times': 3, 'z_value': 0.05801703780889511}, {'scene_id': '2-204', 'z_times': 3, 'z_value': 0.06425406038761139}, {'scene_id': '2-244', 'z_times': 3, 'z_value': 0.03358098492026329}, {'scene_id': '2-209', 'z_times': 2, 'z_value': 0.0740632489323616}, {'scene_id': '2-208', 'z_times': 1, 'z_value': 0.04372081160545349}, {'scene_id': '2-201', 'z_times': 2, 'z_value': 0.014324762858450413}, {'scene_id': '2-222', 'z_times': 1, 'z_value': 0.03871911019086838}]
+
+
+
+*****************object name is :bowl_a ***********************
+ This object not exist z
+        it Z are:
+[]
+
+
+
+*****************object name is :mustard_bottle ***********************
+ Good Object
+        it Z are:
+[{'scene_id': '2-9', 'z_times': 100, 'z_value': 0.09615201503038406}]
+
+
+
+*****************object name is :a_cups ***********************
+ This Object z is not only one
+        it Z are:
+[{'scene_id': '2-115', 'z_times': 28, 'z_value': 0.0308302603662014}, {'scene_id': '2-181', 'z_times': 1, 'z_value': 0.02577267400920391}, {'scene_id': '2-169', 'z_times': 1, 'z_value': 0.04100161790847778}]
+
+
+
+*****************object name is :f_cups ***********************
+ This object not exist z
+        it Z are:
+[]
+
+
+
+*****************object name is :a_toy_airplane ***********************
+ This Object z is not only one
+        it Z are:
+[{'scene_id': '2-115', 'z_times': 17, 'z_value': 0.02308930829167366}, {'scene_id': '2-116', 'z_times': 1, 'z_value': 0.06225718930363655}, {'scene_id': '2-140', 'z_times': 1, 'z_value': 0.07295171916484833}, {'scene_id': '2-135', 'z_times': 1, 'z_value': 0.055514559149742126}]
+
+
+
+*****************object name is :e_lego_duplo ***********************
+ Good Object
+        it Z are:
+[{'scene_id': '2-9', 'z_times': 70, 'z_value': 0.02180900238454342}]
+
+
+
+*****************object name is :rubiks_cube ***********************
+ This Object z is not only one
+        it Z are:
+[{'scene_id': '1-74', 'z_times': 106, 'z_value': 0.028678998351097107}, {'scene_id': '2-15', 'z_times': 3, 'z_value': 0.05533451959490776}, {'scene_id': '2-53', 'z_times': 1, 'z_value': 0.08016727864742279}]
+
+
+
+*****************object name is :i_cups ***********************
+ This Object z is not only one
+        it Z are:
+[{'scene_id': '2-200', 'z_times': 29, 'z_value': 0.037774745374917984}, {'scene_id': '2-193', 'z_times': 1, 'z_value': 0.044870056211948395}]
+
+
+
+*****************object name is :wood_block ***********************
+ This Object z is not only one
+        it Z are:
+[{'scene_id': '1-74', 'z_times': 198, 'z_value': 0.022629261016845703}, {'scene_id': '2-64', 'z_times': 2, 'z_value': 0.0435217060148716}]
+
+
+
+*****************object name is :pigeon ***********************
+ Good Object
+        it Z are:
+[{'scene_id': '2-223', 'z_times': 20, 'z_value': 0.09864478558301926}]
+
+
+
+*****************object name is :bleach_cleanser ***********************
+ Good Object
+        it Z are:
+[{'scene_id': '2-9', 'z_times': 100, 'z_value': 0.12578421831130981}]
+
+
+
+*****************object name is :gelatin_box ***********************
+ This Object z is not only one
+        it Z are:
+[{'scene_id': '1-74', 'z_times': 195, 'z_value': 0.015168317593634129}, {'scene_id': '2-100', 'z_times': 1, 'z_value': 0.02898578718304634}, {'scene_id': '2-76', 'z_times': 2, 'z_value': 0.044827766716480255}, {'scene_id': '1-137', 'z_times': 1, 'z_value': 0.03775623440742493}, {'scene_id': '1-124', 'z_times': 1, 'z_value': 0.053946353495121}]
+
+
+
+*****************object name is :spoon ***********************
+ This object not exist z
+        it Z are:
+[]
+
+
+
+*****************object name is :red_car ***********************
+ This Object z is not only one
+        it Z are:
+[{'scene_id': '2-223', 'z_times': 49, 'z_value': 0.027983283624053}, {'scene_id': '2-227', 'z_times': 1, 'z_value': 0.02141219936311245}]
+
+
+
+*****************object name is :flat_screwdriver ***********************
+ This Object z is not only one
+        it Z are:
+[{'scene_id': '2-110', 'z_times': 45, 'z_value': 0.015338653698563576}, {'scene_id': '2-185', 'z_times': 1, 'z_value': 0.05790282040834427}, {'scene_id': '2-103', 'z_times': 2, 'z_value': 0.022824756801128387}, {'scene_id': '2-156', 'z_times': 1, 'z_value': 0.037248462438583374}, {'scene_id': '2-104', 'z_times': 1, 'z_value': 0.030729131773114204}]
+
+
+
+*****************object name is :green_car ***********************
+ Good Object
+        it Z are:
+[{'scene_id': '2-223', 'z_times': 50, 'z_value': 0.04123740270733833}]
+
+
+
+*****************object name is :e_cups ***********************
+ This Object z is not only one
+        it Z are:
+[{'scene_id': '2-110', 'z_times': 29, 'z_value': 0.03559989109635353}, {'scene_id': '2-146', 'z_times': 1, 'z_value': 0.10920805484056473}]
+
+
+
+*****************object name is :pure_zhen ***********************
+ Good Object
+        it Z are:
+[{'scene_id': '2-238', 'z_times': 20, 'z_value': 0.09196119755506516}]
+
+
+
+*****************object name is :large_marker ***********************
+ This object not exist z
+        it Z are:
+[]
+
+
+
+*****************object name is :adjustable_wrench ***********************
+ This Object z is not only one
+        it Z are:
+[{'scene_id': '2-110', 'z_times': 42, 'z_value': 0.0061250473372638226}, {'scene_id': '2-198', 'z_times': 2, 'z_value': 0.031400926411151886}, {'scene_id': '2-147', 'z_times': 3, 'z_value': 0.024708203971385956}, {'scene_id': '2-141', 'z_times': 1, 'z_value': 0.07416274398565292}, {'scene_id': '2-107', 'z_times': 1, 'z_value': 0.060924917459487915}, {'scene_id': '2-150', 'z_times': 1, 'z_value': 0.03840898349881172}]
+
+
+
+*****************object name is :hello_kitty_bowl ***********************
+ Good Object
+        it Z are:
+[{'scene_id': '2-244', 'z_times': 10, 'z_value': 0.037413064390420914}]
+
+
+
+*****************object name is :wooden_puzzle1 ***********************
+ This Object z is not only one
+        it Z are:
+[{'scene_id': '1-201', 'z_times': 68, 'z_value': 0.016801996156573296}, {'scene_id': '2-209', 'z_times': 1, 'z_value': 0.041626133024692535}, {'scene_id': '2-248', 'z_times': 1, 'z_value': 0.022886738181114197}]
+
+
+
+*****************object name is :hammer ***********************
+ This Object z is not only one
+        it Z are:
+[{'scene_id': '2-171', 'z_times': 2, 'z_value': 0.08646311610937119}, {'scene_id': '2-176', 'z_times': 14, 'z_value': 0.016267377883195877}, {'scene_id': '2-136', 'z_times': 3, 'z_value': 0.05011758953332901}, {'scene_id': '2-132', 'z_times': 1, 'z_value': 0.06760813295841217}]
+
+
+
+*****************object name is :sugar_box ***********************
+ This Object z is not only one
+        it Z are:
+[{'scene_id': '2-9', 'z_times': 166, 'z_value': 0.011399307288229465}, {'scene_id': '2-69', 'z_times': 1, 'z_value': 0.09464521706104279}, {'scene_id': '1-145', 'z_times': 1, 'z_value': 0.022862188518047333}, {'scene_id': '2-3', 'z_times': 1, 'z_value': 0.028618795797228813}, {'scene_id': '1-141', 'z_times': 1, 'z_value': 0.04135921970009804}]
+
+
+
+*****************object name is :doraemon_bowl ***********************
+ Good Object
+        it Z are:
+[{'scene_id': '2-223', 'z_times': 40, 'z_value': 0.025905489921569824}]
+
+
+
+*****************object name is :g_cups ***********************
+ Good Object
+        it Z are:
+[{'scene_id': '2-171', 'z_times': 30, 'z_value': 0.03896951675415039}]
+
+
+
+*****************object name is :doraemon_cup ***********************
+ This Object z is not only one
+        it Z are:
+[{'scene_id': '2-223', 'z_times': 19, 'z_value': 0.04623084515333176}, {'scene_id': '2-221', 'z_times': 1, 'z_value': 0.03546678274869919}]
+
+
+
+*****************object name is :tomato_soup_can ***********************
+ This Object z is not only one
+        it Z are:
+[{'scene_id': '1-55', 'z_times': 78, 'z_value': 0.051274023950099945}, {'scene_id': '1-23', 'z_times': 1, 'z_value': 0.03381509333848953}, {'scene_id': '1-61', 'z_times': 1, 'z_value': 0.09666233509778976}]
+
+
+
+*****************object name is :wooden_puzzle3 ***********************
+ Good Object
+        it Z are:
+[{'scene_id': '1-239', 'z_times': 50, 'z_value': 0.017123058438301086}]
+
+
+
+*****************object name is :c_toy_airplane ***********************
+ Good Object
+        it Z are:
+[{'scene_id': '2-15', 'z_times': 10, 'z_value': 0.03350812569260597}]

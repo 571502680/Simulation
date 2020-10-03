@@ -520,11 +520,55 @@ class Change_Dataset:
 
         return var_list
 
-    def getmore_worldfile(self,begin_number,files_number=250):
+    def get_random_data(self):
+        """
+        随机生成xyz方向的偏移.对最大成精进行5倍缩小
+        :return:
+        """
+        x=random.randint(-30,150)
+        random_x=float(x)/1000
+        y=random.randint(-35,35)
+        random_y=float(y)/1000
+        z=random.randint(-314,314)
+        random_z=float(z)/1000
+        return random_x,random_y,random_z
+
+    def change_var_list(self,var_list,random_x,random_y,random_z):
+        """
+        基于random_data进行var_list的数据生成,一个批次的var_list只进行一次更改,从而避免物体进行很多方向的改变
+        :param var_list: 物体的Pose
+        :param random_x: x方向随机参数
+        :param random_y: y方向随机参数
+        :param random_z: z角度随机参数
+        :return:
+        """
+        for i in range(1,3):
+            if -0.03<var_list[0]+random_x/i<0.15:
+                var_list[0]=var_list[0]+random_x/i
+                break
+
+        for i in range(1,3):
+            if -0.35<var_list[1]+random_y/i<0.35:
+                var_list[1]=var_list[1]+random_y/i
+                break
+
+        temp_z=var_list[5]+random_z
+        for i in range(1,3):
+            if -3.1<temp_z<3.1:
+                var_list[5]=var_list[5]+temp_z
+                break
+            else:
+                temp_z=temp_z%3.1
+
+        return var_list
+
+    def getmore_worldfile(self,begin_number,filebegin='1',files_number=250):
         """
         进行场景数据的增强
         xy和xy轴旋转都乘上(1+rand()),xy和旋转矩阵的尺度不超过一定范围(之后确定)
         生成的新场景,从1-300开始生成,主要针对1-的场景生成
+        :param begin_number:开始的数据
+        :param filebegin: 指定第几个场景进行生成
         :param files_number:生成新文件的数量,根据场景而定,有一些场景只有250个,从而不会生成完
         :return:
         """
@@ -532,9 +576,11 @@ class Change_Dataset:
         all_scenes=os.listdir(self.scenes_path)
         all_scenes.sort(key=lambda data:int(data[0])*10000+int(data.split('-')[1]))#按照排列顺序进行
 
+
+        make_file_number=0
         #2:对所有场景的input.world进行随机参数更改,由于是xyzrpy,因此z轴不动,其他的都动,随机乘上一个(1+rand)即可
-        for i,scene_id in enumerate(all_scenes):
-            if scene_id[0]!='1':
+        for scene_id in all_scenes:
+            if scene_id[0]!=filebegin:
                 continue
 
             #2.1:读取一个场景文件
@@ -542,6 +588,10 @@ class Change_Dataset:
             origin_tree= ET.parse(worldfile_path)
 
             #2.2:更改Pose
+            #2.2.1:获取随机物体的Pose
+            random_x,random_y,random_z=self.get_random_data()
+
+            #2.2.2:对每一个物体的Pose进行更改
             for child in origin_tree.findall('world/model'):
                 object_name = child.attrib['name']
                 if object_name=='table':
@@ -550,8 +600,10 @@ class Change_Dataset:
 
                 var_list=None
                 for pose in child.findall('pose'):
+                    #主要更改部分
                     var_list = list(map(float, pose.text.split(' ')))
-                    var_list=self.get_random_pose(var_list)#生成新的Pose
+                    # var_list=self.get_random_pose(var_list)#随机生成新的Pose
+                    var_list=self.change_var_list(var_list,random_x,random_y,random_z)#同一场景同时一个方向移动
                     pose.text="{} {} {} {} {} {}".format(var_list[0],var_list[1],var_list[2],var_list[3],var_list[4],var_list[5])
                     break
 
@@ -559,7 +611,7 @@ class Change_Dataset:
                     print("[Error] the var_list is None")
 
             #3:保存对应的矩阵
-            savefile=self.scenes_change_path+"/1-"+str(begin_number+i)
+            savefile=self.scenes_change_path+"/{}-".format(filebegin)+str(begin_number+make_file_number)
             if not os.path.exists(savefile):
                 os.mkdir(savefile)
             else:
@@ -568,13 +620,97 @@ class Change_Dataset:
 
             savefile_path=savefile+"/input.world"
             origin_tree.write(savefile_path)
-            if i%30==0:
-                print("Already generate {} .world file".format(i))
+            if make_file_number%30==0:
+                print("Already generate {} .world file".format(make_file_number))
             #4:超过一定数量,退出生成
-            if i>files_number:
+            if make_file_number>files_number:
                 break
+            else:
+                make_file_number=make_file_number+1
 
         print("Already Generate {} new world files".format(files_number))
+
+    ####################################查询所有物体pose的z值,进行dict的保存####################################
+    def get_object_z(self):
+        """
+        读取所有的.world文件,解析出物体的pose中的z,如果z值差别特别大则进行新的添加,从而知道哪一些场景是有问题等等
+        @return:
+        """
+        #生成一个空的dict用于z值的存储
+        z_dict={}
+        for true_name in self.objects_names:
+            z_dict[true_name]=[]#每个里面是一个dict
+
+        #寻找所有的scene文件
+        files=os.listdir(self.scenes_path)
+        for file in files:
+            if file[0]=='4' or file[0]=='5' or file[0]=='3':
+                continue
+            world_file=os.path.join(self.scenes_path,file)+"/input.world"
+            xml_root=ET.parse(world_file).getroot()
+            for child_1 in xml_root.findall('world/model'):
+                gazebo_name=child_1.attrib['name']
+                if gazebo_name == "ground_plane" or gazebo_name == "table":
+                    continue
+
+                #1:读取物体真实名称
+                true_name=None
+                for child_2 in child_1.findall('link/collision/geometry/mesh/uri'):
+                    uri=child_2.text
+                    uri=uri[8:]
+                    stop=uri.find('/')
+                    true_name=uri[:stop]
+                    # if true_name=="prism":
+                    #     #这里面更新一下prism的东西
+                    #     pass
+
+                if true_name is None:
+                    print("[Warning] {} file {} don't have true_name".format(world_file,gazebo_name))
+
+                #2:获取物体z值
+                object_z=None
+                for pose in child_1.findall('pose'):
+                    #获取物体pose
+                    var_list = list(map(float, pose.text.split(' ')))
+                    object_z=var_list[2]
+                    break
+
+                if object_z is None:
+                    print("[Warning] {} file {} don't have z".format(world_file,object_z))
+
+                #3:检索已经存在的z值,看看是否会不同
+                same_z_flag=False
+                for z_info in z_dict[true_name]:
+                    temp_z=z_info['z_value']
+                    if abs(temp_z-object_z)<0.005:#认为两个相聚非常近,不进行处理
+                        same_z_flag=True
+                        z_info['z_times']=z_info['z_times']+1
+                        break
+
+                #不存在相近的目标
+                if not same_z_flag:
+                    if len(z_dict[true_name])==0:
+                        z_dict[true_name].append({'z_value':object_z,'z_times':1,'scene_id':file})
+
+                    else:
+                        print("Find {} object has differennt scale,it is in :{} ".format(true_name,world_file))
+                        print("The origin is {}".format(z_dict[true_name]))
+                        print("The new is {}".format(object_z))
+                        z_dict[true_name].append({'z_value':object_z,'z_times':1,'scene_id':file})
+
+        #输出scale_dict,查看是否进行保存
+        for object in z_dict:
+            print("*****************object name is :{} ***********************".format(object))
+            if len(z_dict[object])>1:
+                print(" This Object z is not only one")
+            elif len(z_dict[object])==1:
+                print(" Good Object")
+            elif len(z_dict[object])==0:
+                print(" This object not exist z")
+            print("        it Z are:\n{}".format(z_dict[object]))
+            print("\n\n")
+
+
 
 ####################使用样例#######################
 def example():
@@ -587,7 +723,8 @@ def example():
 
 def main():
     change_Dataset=Change_Dataset()
-    change_Dataset.getmore_worldfile(begin_number=800)
+    # change_Dataset.getmore_worldfile(filebegin='2',begin_number=550,files_number=250)
+    change_Dataset.get_object_z()
 
 if __name__ == '__main__':
     main()

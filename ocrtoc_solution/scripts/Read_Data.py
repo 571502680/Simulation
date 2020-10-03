@@ -329,6 +329,11 @@ class Read_Data:
         #1:获取所有物体的名称
         gazebo_name2true_name={}#保存成一个dict,由gazebo名称直接变换到真实名称
         gazebo_name_list=[]
+        try:
+            scene_id=rospy.get_param('~scene')
+        except:
+            print('[Warning] The scene_id is not given,use 1-1 instead')
+            scene_id=scene_id
         worldfile_path=self.materials_path+"/scenes/"+scene_id+"/input.world"
         xml_tree=ET.parse(worldfile_path).getroot()
         for child_1 in xml_tree.findall('world/model'):

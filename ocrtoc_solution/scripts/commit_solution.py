@@ -65,6 +65,9 @@ class CommitSolution(object):
         goal_pose_list = goal.pose_list
         goal_pose_list = self.process_goal_pose(goal_object_list, goal_pose_list)
 
+
+        print("goal_pose_list is : {}".format(goal_pose_list))
+
         #导入场景
         rospy.loginfo("Load models")
         for object_name in goal.object_list:
@@ -86,7 +89,7 @@ class CommitSolution(object):
                 goal_pose = goal_pose_list.get(name)
 
                 # 2:抓取物体并运动到目标位置
-                print("Traget is {},it's Pose is {}".format(objects.names[i], origin_pose))
+                print("Traget is {},it's Pose is {},it's goal pose is {}".format(objects.names[i], origin_pose,goal_pose))
                 if name in self.Need_to_Adjust:
                     param = self.Need_to_Adjust.get(name)
                     grasp_pose = robot.get_pickpose_from_pose(origin_pose,x=param[0],y=param[1],z=param[2],
@@ -103,13 +106,13 @@ class CommitSolution(object):
                         place_pose = robot.get_pickpose_from_pose(goal_pose, x=param[0], y=param[1], z=param[2],
                                                                   degreeR=param[3], degreeP=param[4], degreeY=param[5])
                     except:
-                        print("DenseFusion Don't detect {}".format(name))
+                        print("DenseFusion Don't detect {} in ajust".format(name))
                         continue
                 else:
                     try:
                         place_pose = robot.get_pickpose_from_pose(goal_pose)
                     except:
-                        print("DenseFusion Don't detect {}".format(name))
+                        print("DenseFusion Don't detect {} in noneed to adjust".format(name))
                         continue
                 # 只是用xyz,旋转角度使用grasp的角度
                 # 改变了运动轨迹，去掉了多余的gethome，提高了上方点位置

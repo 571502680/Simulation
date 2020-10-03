@@ -85,6 +85,12 @@ class Robot(object):
                                         [0,0,-1,0],
                                         [0,0,0,1]])
 
+        #抓取点更改参数
+        self.Need_to_Adjust = {'gelatin_box': [0, 0, 0, 0, math.pi, math.pi / 2],
+                               'potted_meat_can': [0, 0, 0, 0, math.pi, math.pi / 2],
+                               'mustard_bottle': [0, 0, 0, 0, 3 * math.pi / 4, math.pi / 2],
+                               'bleach_cleanser': [0, 0, 0, 0, 3 * math.pi / 4, math.pi / 2]}
+
     #####################################机械臂控制接口##############################
     def forward_kinematics(self, q):
         # input q , numpy array (6,)
@@ -243,9 +249,9 @@ class Robot(object):
         path_time = path_length / vel
 
         if debug:
-            print poses[:,:3]
-            print 'keypoints num = ', keypoints_num
-            print 'Total path time : ', path_time, "s,  path length", path_length,'m'
+            print(poses[:,:3])
+            print('keypoints num = ', keypoints_num)
+            print('Total path time : ', path_time, "s,  path length", path_length,'m')
 
         sample_freq = 20  # 20Hz
         joint_seed = self.q
@@ -345,7 +351,6 @@ class Robot(object):
         middle_angle=np.linspace(0,target_angle,num=points)
         for angle in middle_angle:
             self.gripper_control(angle,force)
-
 
     @property
     def x(self):
@@ -511,7 +516,6 @@ def move_to_object():
             print("Move to {}".format(objects.names[i]))
         break
 
-
 def test_gripper():
     """
     这里面尝试进行物体抓取
@@ -539,7 +543,6 @@ def test_gripper():
             robot.move_updown(grasp_pose, grasp=False, fast_vel=0.4, slow_vel=0.1)
             print("Move to {}".format(objects.names[i]))
 
-
 def test_sapien():
     robot = Robot(init_node=True)
     read_Data = Read_Data.Read_Data()
@@ -564,7 +567,6 @@ def test_sapien():
 
         break
 
-
 def move_home():
     """
     机械臂撞东西之后返回原来的状态
@@ -575,8 +577,35 @@ def move_home():
         robot.getpose_home(3)
         robot.home(t=1)
 
+def test_adjust_grasp_pose():
+    read_Data=Read_Data.Read_Data(init_node=False)
+    robot=Robot(init_node=True)
+    while not rospy.is_shutdown():
+        robot.getpose_home(t=3)
+        robot.home(t=1)
+        print("Ready to Grasp")
+        world_info_list,gazebo_name2true_name,gazebo_name_list=read_Data.get_world_info()
+        for i,object in enumerate(world_info_list):
+            true_name=object['true_name']
+            model_pose=object['model_pose']
+            print("object_name is: {}".format(true_name))
+            origin_pose=np.array([model_pose.position.x,model_pose.position.y,model_pose.position.z,model_pose.orientation.x,model_pose.orientation.y,model_pose.orientation.z,model_pose.orientation.w])
+            if true_name in robot.Need_to_Adjust:
+                param=robot.Need_to_Adjust.get(true_name)
+                grasp_pose = robot.get_pickpose_from_pose(origin_pose,x=param[0],y=param[1],z=param[2],
+                                                          degreeR=param[3], degreeP=param[4], degreeY=param[5])
+            else:
+                grasp_pose = robot.get_pickpose_from_pose(origin_pose)
+
+            robot.gripper_control(angle=0, force=1)
+            robot.move_updown(grasp_pose, grasp=True, fast_vel=0.5, slow_vel=0.2)
+
+            robot.move_updown(grasp_pose,grasp=False,fast_vel=0.5,slow_vel=0.2)
+        break
+
 
 if __name__ == '__main__':
-    test_sapien()
+    # test_sapien()
     # test_gripper()
     # move_home()
+    test_adjust_grasp_pose()
