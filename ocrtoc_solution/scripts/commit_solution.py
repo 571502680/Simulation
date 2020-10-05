@@ -12,7 +12,7 @@ from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 # 自己包使用
 import robot_control
 import math
-
+import copy
 
 class CommitSolution(object):
     def __init__(self, name):
@@ -31,10 +31,29 @@ class CommitSolution(object):
             rospy.resolve_name('gripper_controller/gripper_cmd/goal'),
             GripperCommandActionGoal, queue_size=10)
         # grasp point
-        self.Need_to_Adjust = {'gelatin_box': [0, 0, 0, 0, math.pi, math.pi / 2],
-                               'potted_meat_can': [0, 0, 0, 0, math.pi, math.pi / 2],
-                               'mustard_bottle': [0, 0, 0, 0, 3 * math.pi / 4, math.pi / 2],
-                               'bleach_cleanser': [0, 0, 0, 0, 3 * math.pi / 4, math.pi / 2]}
+        self.need_to_ignore = ['pan_tefal','bowl_a','bowl','bleach_cleanser','plate']
+        self.Need_to_Adjust = {'gelatin_box': [0, 0, 0, 0, math.pi, math.pi/2],
+                               'potted_meat_can': [0, 0, 0, 0, math.pi, -math.pi/2],
+                               'cracker_box':[0,0,-0.01,0,math.pi,0],
+                               'pudding_box':[0,0,-0.007,0,math.pi,0],
+                               'sugar_box': [0,0,-0.01,0,math.pi,0],
+                               'mustard_bottle': [0, 0, 0.01, 0, math.pi , math.pi/2],
+                               'bleach_cleanser': [0, 0, 0.015, 0, math.pi , math.pi/2],
+                               'power_drill':[-0.01, 0, 0, 0, math.pi , math.pi/2],
+                               'extra_large_clamp':[-0.002, -0.002, 0, 0, math.pi , 3*math.pi/4],
+                               'hammer':[0, 0, -0.01, 0, math.pi , 0],
+                               'pan_tefal':[0, -0.02, 0, 0, math.pi , 0],
+                               'bowl':[0, -0.02, 0, 0, math.pi , 0],
+                               'bowl_a':[0, -0.01, 0, 0, math.pi , 0],
+                               'spoon':[0, 0, -0.005, 0, math.pi , 0],
+                               'fork':[0, 0, -0.005, 0, math.pi , 0],
+                               'knife':[0, 0, -0.005, 0, math.pi , 0],
+                               'phillips_screwdriver':[0, 0, -0.005, 0, math.pi , 0],
+                               'jenga': [0,0,-0.01,0,math.pi,0],
+                               'e_cups':[0.005,0,0,0,math.pi,0],
+                               'f_cups':[0.005,0,0,0,math.pi,0],
+                               'g_cups':[0.005,0,0,0,math.pi,0],
+                               'h_cups':[0,0.007,0,0,math.pi,0]}
         # see more in test_grasp.py
 
         # create messages that are used to publish feedback/result.
@@ -58,6 +77,22 @@ class CommitSolution(object):
                  pose.orientation.z, pose.orientation.w]))
         goal_list = dict(zip(goal_object_list, return_pose_list))
         return goal_list
+    
+    def process_grasp_pose(self, name_list, objpose_list):
+        grasp_list = dict(zip(name_list, objpose_list))
+        n = len(name_list)
+        for i in range(0,n):
+            for j in range(0,n-i-1):
+                if ((grasp_list.get(name_list[j])[1])**2 + (grasp_list.get(name_list[j])[0])**2)<((grasp_list.get(name_list[j+1])[1])**2 + (grasp_list.get(name_list[j+1])[0])**2):
+                    name_list[j],name_list[j+1]=name_list[j+1],name_list[j]
+        
+        for obj in self.need_to_ignore:
+            if obj in name_list:
+                name_list.remove(obj)
+
+        return name_list, grasp_list
+
+
 
     def execute_callback(self, goal):
         rospy.loginfo("Get clean task.")
@@ -75,27 +110,37 @@ class CommitSolution(object):
         #获取目标场景中位置
         robot = robot_control.Robot()
         objects = robot_control.Objects(get_pose_from_gazebo=False)
+        name_list=None
+        objname_list = None
+        print(name_list)
+        print(objname_list)
         while not rospy.is_shutdown():
             print("Ready to Picking")
             robot.getpose_home(1)
             objects.get_pose()
             robot.home(t=1)
-            for i, origin_pose in enumerate(objects.x):
+            if objects.names is not None :
+                name_list = copy.deepcopy(objects.names)
+                objname_list = copy.deepcopy(objects.x)
+                name_list,grasp_list = self.process_grasp_pose(objects.names, objects.x)
+                print(name_list)
+                print(grasp_list)
+            for i in name_list:
                 # 1:获取物体名称和物体目标位置
-                name = objects.names[i]
+                name = i
                 goal_pose = goal_pose_list.get(name)
 
                 # 2:抓取物体并运动到目标位置
-                print("Traget is {},it's Pose is {}".format(objects.names[i], origin_pose))
+                #print("Traget is {},it's Pose is {}".format(objects.names[i], origin_pose))
                 if name in self.Need_to_Adjust:
                     param = self.Need_to_Adjust.get(name)
-                    grasp_pose = robot.get_pickpose_from_pose(origin_pose,x=param[0],y=param[1],z=param[2],
+                    grasp_pose = robot.get_pickpose_from_pose(grasp_list.get(name),x=param[0],y=param[1],z=param[2],
                                                               degreeR=param[3], degreeP=param[4], degreeY=param[5])
                 else:
-                    grasp_pose = robot.get_pickpose_from_pose(origin_pose)
+                    grasp_pose = robot.get_pickpose_from_pose(grasp_list.get(name))
                 robot.gripper_control(angle=0, force=1)
                 robot.move_updown(grasp_pose, grasp=True, fast_vel=0.4, slow_vel=0.1)
-
+                #robot.home()
                 # 运动到目标位置并放下
                 if name in self.Need_to_Adjust:
                     try:
@@ -114,6 +159,7 @@ class CommitSolution(object):
                 # 只是用xyz,旋转角度使用grasp的角度
                 # 改变了运动轨迹，去掉了多余的gethome，提高了上方点位置
                 robot.move_updown(place_pose, grasp=False, fast_vel=0.4, slow_vel=0.1)
+                robot.getpose_home()
             break
 
         # Example: set status "Aborted" and quit.
@@ -139,3 +185,5 @@ if __name__ == '__main__':
     rospy.init_node('commit_solution')
     commit_solution = CommitSolution('commit_solution')
     rospy.spin()
+
+

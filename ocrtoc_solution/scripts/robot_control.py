@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
+#-*- coding: utf-8 -*-
 
 import rospy
 import numpy as np
@@ -17,16 +17,15 @@ import sys
 # msgs
 from std_msgs.msg import Int8
 from sensor_msgs.msg import JointState
-from gazebo_msgs.msg import ModelStates
+from gazebo_msgs.msg  import ModelStates
 from control_msgs.msg import GripperCommandActionGoal
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 from std_msgs.msg import Float64MultiArray
 import quaternion
 from kdl_conversions import *
-# transform
+#transform
 import tf.transformations as trans_tools
 import Read_Data
-
 
 class Robot(object):
     def __init__(self, init_node=False, node_name='test', base_link ="world", tip_link = "robotiq_2f_85_ee_link"):
@@ -36,7 +35,7 @@ class Robot(object):
         self._x, self._dx, self._q, self._dq = None, None, None, None
         self._J, self._p = None, None
         self._reachable=True
-
+        
         # gripper
         self._gripper_is_grasped = 0.
         self._gripper_width = 0.07
@@ -58,15 +57,15 @@ class Robot(object):
         self._jac_calc = PyKDL.ChainJntToJacSolver(self._arm_chain)
         # trac_ik inverse kinematics
         urdf_str = rospy.get_param('/robot_description')
-        self.trac_ik_solver = IK(self._base_link, self._tip_link, urdf_string=urdf_str)
+        self.trac_ik_solver = IK(self._base_link, self._tip_link, urdf_string=urdf_str)  
 
 
         # subscribe robot joint states
         self.robot_state_sub = rospy.Subscriber("joint_states", JointState, self.robot_state_cb, queue_size=1000 )
         # send pose command to C++ driver
         self.pose_cmd_pub = rospy.Publisher(
-            rospy.resolve_name('ur_command'),
-            Float64MultiArray, queue_size=10)
+                    rospy.resolve_name('ur_command'),
+                    Float64MultiArray, queue_size=10)
         # send joints to arm
         self.joint_cmd_pub = rospy.Publisher(
             rospy.resolve_name('arm_controller/command'),
@@ -81,9 +80,11 @@ class Robot(object):
 
         #绕x轴的旋转180度矩阵
         self.trans_x180Matrix=np.array([[1,0,0,0],
-                                        [0,-1,0,0],
-                                        [0,0,-1,0],
-                                        [0,0,0,1]])
+                                      [0,-1,0,0],
+                                      [0,0,-1,0],
+                                      [0,0,0,1]])
+
+
 
     #####################################机械臂控制接口##############################
     def forward_kinematics(self, q):
@@ -103,17 +104,17 @@ class Robot(object):
         return np.array([pos[0], pos[1], pos[2], quat[0], quat[1], quat[2], quat[3]]), jac_array
 
     def inverse_kinematics(self, pos, quat, seed=None):
-
+        
         if seed is None:
             seed  = self._q
         result = self.trac_ik_solver.get_ik(seed,
                                             pos[0], pos[1], pos[2],  # X, Y, Z
-                                            quat[0], quat[1], quat[2], quat[3])     # QX, QY, QZ, QW
-
+                                            quat[0], quat[1], quat[2], quat[3])     # QX, QY, QZ, QW     
+         
         return np.array(result) if result is not None else None
 
     def robot_state_cb(self, data):
-
+        
         q = np.zeros(self._num_jnts)
         dq = np.zeros(self._num_jnts)
         # assign joint angle and velocity by joint name
@@ -153,7 +154,7 @@ class Robot(object):
             joint_list= joint
         q1.positions = joint_list
         q1.velocities = [0.]*6
-        # q1.time_from_start.secs = t
+        # q1.time_from_start.secs = t        
         q1.time_from_start = rospy.Duration(t)
         joint_cmd.points.append(q1)
         self.joint_cmd_pub.publish(joint_cmd)
@@ -188,7 +189,7 @@ class Robot(object):
 
     def sin_test(self, delta_z = 0.2, T = 20.):
         # sin movement test, z = A*sin(w*t)
-
+        
         x0 = np.copy(self._x)
         print(x0)
         t0 = rospy.get_time()
@@ -216,22 +217,22 @@ class Robot(object):
         if dot < 0.0:
             v1 = -v1
             dot = -dot
-
+        
         DOT_THRESHOLD = 0.9995
         if dot > DOT_THRESHOLD:
             result = v0[np.newaxis,:] + t_array[:,np.newaxis] * (v1 - v0)[np.newaxis,:]
             return (result.T / np.linalg.norm(result, axis=1)).T
-
+        
         theta_0 = np.arccos(dot)
         sin_theta_0 = np.sin(theta_0)
 
         theta = theta_0 * t_array
         sin_theta = np.sin(theta)
-
+        
         s0 = np.cos(theta) - dot * sin_theta / sin_theta_0
         s1 = sin_theta / sin_theta_0
         return (s0[:,np.newaxis] * v0[np.newaxis,:]) + (s1[:,np.newaxis] * v1[np.newaxis,:])
-
+        
     def motion_generation(self, poses, vel=0.2, intepolation='linear',debug=False):
         # poses : (n,7) array, n: num of viapoints. [position, quaternion]
         poses = np.concatenate([self.x.reshape(1,-1), poses],axis=0) # add current points
@@ -258,11 +259,11 @@ class Robot(object):
                 if debug:
                     print(path_i)
                     rospy.loginfo("start to go the " + str(i+1)+  "-th point: " + " x="+str(poses[i+1,0]) + " y="+str(poses[i+1,1])
-                                  + " z="+str(poses[i+1,3])+" time: " + str(path_i / vel) +"s")
+                            + " z="+str(poses[i+1,3])+" time: " + str(path_i / vel) +"s")
                 if intepolation=='linear':
                     pos = np.concatenate((np.linspace(poses[i,0],poses[i+1,0], num=sample_num).reshape(-1,1),
-                                          np.linspace(poses[i,1],poses[i+1,1], num=sample_num).reshape(-1,1),
-                                          np.linspace(poses[i,2],poses[i+1,2], num=sample_num).reshape(-1,1) ), axis=1)                # print
+                                        np.linspace(poses[i,1],poses[i+1,1], num=sample_num).reshape(-1,1),
+                                        np.linspace(poses[i,2],poses[i+1,2], num=sample_num).reshape(-1,1) ), axis=1)                # print 
                 ori = self.slerp(poses[i,3:], poses[i+1,3:] , np.array(range(sample_num+1), dtype=np.float)/sample_num    )
                 for j in range(sample_num):
                     target_x = np.concatenate((pos[j,:], ori[j,:])   )
@@ -304,13 +305,16 @@ class Robot(object):
         :param pose:直接乘上一个围绕x轴转180度的变换矩阵即可(当然也可以顺着y轴,但是先不管y轴)
         :return:
         """
+        euler = list(trans_tools.euler_from_quaternion(pose[3:]))
+        euler[0] = 0
+        euler[1] = 0
+        pose[3:] = trans_tools.quaternion_from_euler(euler[0],euler[1],euler[2])
         pose_Matrix=trans_tools.quaternion_matrix(pose[3:])
-        #might have some problem,will find out later
-        move_xyz = pose[:3] + np.array([x,y,z])
-        pose_Matrix[0:3,3]=np.array(pose[:3].T)
+        move_xyz = pose[:3] + np.array([x*math.sin(euler[2])+y*math.cos(euler[2]),y*math.sin(euler[2])+x*math.sin(euler[2]),z])
+        pose_Matrix[0:3,3]=np.array(move_xyz.T)
 
         #乘上变换矩阵
-        grasp_Matrix=pose_Matrix.dot(quaternion.euler_matrix(degreeR,degreeP,degreeY))
+        grasp_Matrix = pose_Matrix.dot(quaternion.euler_matrix(degreeR,degreeP,degreeY))
         rot=trans_tools.quaternion_from_matrix(grasp_Matrix)
         trans=grasp_Matrix[0:3,3].T
         converted_pose=np.hstack([trans,rot])
@@ -335,6 +339,7 @@ class Robot(object):
             self.gripper_control(angle=0,force=1)
         time.sleep(1)
         self.motion_generation(upper_pose[np.newaxis,:],vel=slow_vel)
+
 
     def grasp_slowly(self,target_angle,force=0,points=20):
         """
@@ -403,7 +408,7 @@ class Robot(object):
         return self._p
 
 class Objects(object):
-    def __init__(self, init_node=False, get_pose_from_gazebo=False):
+    def __init__(self, init_node = False,get_pose_from_gazebo=False):
         """
         获取物体姿态参数
         :param init_node:初始化node
@@ -419,28 +424,25 @@ class Objects(object):
         ## todo, we need to do object localization by the cameras
         ## now, I use the Gazebo topic to get them in world frame.
         if get_pose_from_gazebo:
-            self.objects_state_sub = rospy.Subscriber("gazebo/model_states", ModelStates, self.objects_state_cb,
-                                                      queue_size=10)  # 读取gazebo信息
+            self.objects_state_sub = rospy.Subscriber("gazebo/model_states", ModelStates, self.objects_state_cb, queue_size=10)#读取gazebo信息
             # self.objects_state_sub = rospy.Subscriber("/sapien/get_model_state", ModelStates, self.objects_state_cb, queue_size=10)#读取sapien信息
         else:
-            self.DenseFuion_result_sub = rospy.Subscriber("/DenseFusionInfer/PoseinWorld", ModelStates,
-                                                          self.objects_state_cb, queue_size=10)
+            self.DenseFuion_result_sub=rospy.Subscriber("/DenseFusionInfer/PoseinWorld",ModelStates,self.objects_state_cb,queue_size=10)
 
-        self.update_pose = False  # 用于决定是否更新Pose
+        self.update_pose=False#用于决定是否更新Pose
 
-        self.detect_state_pub = rospy.Publisher("/DenseFusionInfer/DetectState", Int8, queue_size=100)
+        self.detect_state_pub=rospy.Publisher("/DenseFusionInfer/DetectState",Int8,queue_size=100)
 
-    def objects_state_cb(self, data):
-        if self.update_pose:  # 在获取位姿的时候为True,获取完成之后为False
+    def objects_state_cb(self,data):
+        if self.update_pose:#在获取位姿的时候为True,获取完成之后为False
             self._names = data.name
             self._nums = len(self._names)
-            self._x = np.zeros([self._nums, 7])  # (n,7) numpy array
+            self._x = np.zeros([self._nums, 7])  #  (n,7) numpy array
             for i in range(self._nums):
                 pose = data.pose[i]
-                self._x[i, :3] = np.array([pose.position.x, pose.position.y, pose.position.z])
-                self._x[i, 3:] = np.array([pose.orientation.x, pose.orientation.y, pose.orientation.z,
-                                           pose.orientation.w])
-
+                self._x[i,:3] = np.array([pose.position.x, pose.position.y, pose.position.z ])
+                self._x[i,3:] = np.array([pose.orientation.x, pose.orientation.y, pose.orientation.z,
+                     pose.orientation.w ] )
     @property
     def x(self):
         """
@@ -448,7 +450,6 @@ class Objects(object):
         :return: [position, orientation] (n,7)
         """
         return self._x
-
     @property
     def names(self):
         """
@@ -456,16 +457,16 @@ class Objects(object):
         """
         return self._names
 
-    def get_pose(self, debug=False):
-        self.update_pose = True
-        self._x = None  # 清除以前的x的Pose
-        rate = rospy.Rate(10)
+    def get_pose(self,debug=False):
+        self.update_pose=True
+        self._x=None#清除以前的x的Pose
+        rate=rospy.Rate(10)
         while not rospy.is_shutdown():
             if self._x is not None:
                 if debug:
                     print("object_name is:")
                     print(self._names)
-                    print("Pose is")
+                    print ("Pose is")
                     print(self._x)
                     break
                 else:
@@ -475,10 +476,11 @@ class Objects(object):
                 print("[Warning],can't get the pose")
             rate.sleep()
 
-        self.update_pose = False
-        send_data = Int8()
-        send_data.data = 1
+        self.update_pose=False
+        send_data=Int8()
+        send_data.data=1
         self.detect_state_pub.publish(send_data)
+
 
 
 #####################################测试函数部分##############################
@@ -487,90 +489,85 @@ def move_to_object():
     这里面基于DenseFusion识别到的结果,运动到每个物体的旁边
     :return:
     """
-    robot = Robot(init_node=True)
+    robot=Robot(init_node=True)
     robot.getpose_home(3)
-    objects = Objects(get_pose_from_gazebo=False)  # 从Gazebo中获取Pose
+    objects=Objects(get_pose_from_gazebo=False)#从Gazebo中获取Pose
     while not rospy.is_shutdown():
         robot.getpose_home()
         print("Ready to get the picture")
         objects.get_pose()
-        for i, pose in enumerate(objects.x):
+        for i,pose in enumerate(objects.x):
             robot.home(t=1)
-            name = objects.names[i]
-            print("name is", name)
-            if name == 'robot' or name == "ground":
+            name=objects.names[i]
+            print("name is",name)
+            if name=='robot' or name=="ground":
                 continue
-            grasp_pose = robot.get_pickpose_from_pose(pose)  # Z轴翻转获取物体的抓取Pose
-            upper_pose = grasp_pose.copy()
-            upper_pose[2] = upper_pose[2] + 0.2  # 抬高30cm
-            print("Traget is {},it's Pose is {}".format(objects.names[i], pose))
-            # 从上往下进行抓取
-            robot.motion_generation(upper_pose[np.newaxis, :], vel=0.4)
-            robot.motion_generation(grasp_pose[np.newaxis, :])
-            robot.motion_generation(upper_pose[np.newaxis, :])
+            grasp_pose=robot.get_pickpose_from_pose(pose)#Z轴翻转获取物体的抓取Pose
+            upper_pose=grasp_pose.copy()
+            upper_pose[2]=upper_pose[2]+0.2#抬高30cm
+            print("Traget is {},it's Pose is {}".format(objects.names[i],pose))
+            #从上往下进行抓取
+            robot.motion_generation(upper_pose[np.newaxis,:],vel=0.4)
+            robot.motion_generation(grasp_pose[np.newaxis,:])
+            robot.motion_generation(upper_pose[np.newaxis,:])
             print("Move to {}".format(objects.names[i]))
         break
-
 
 def test_gripper():
     """
     这里面尝试进行物体抓取
     :return:
     """
-    robot = Robot(init_node=True)
-    objects = Objects(get_pose_from_gazebo=True)  # 从Gazebo中获取Pose
+    robot=Robot(init_node=True)
+    objects=Objects(get_pose_from_gazebo=True)#从Gazebo中获取Pose
     while not rospy.is_shutdown():
         robot.getpose_home(t=3)
         print("Ready to get the Pose")
         objects.get_pose()
-        for i, pose in enumerate(objects.x):
+        for i,pose in enumerate(objects.x):
             robot.home(t=1)
-            name = objects.names[i]
-            print("name is", name)
-            if name == 'robot' or name == "ground":
+            name=objects.names[i]
+            print("name is",name)
+            if name=='robot' or name=="ground":
                 continue
-            print("Target Pose is", pose)
-            grasp_pose = robot.get_pickpose_from_pose(pose)  # Z轴翻转获取物体的抓取Pose
+            print("Target Pose is",pose)
+            grasp_pose=robot.get_pickpose_from_pose(pose)#Z轴翻转获取物体的抓取Pose
 
-            print("Grasp Pose is", grasp_pose)
-            robot.gripper_control(angle=0, force=0)
-            robot.move_updown(grasp_pose, grasp=True, fast_vel=0.4, slow_vel=0.1)
+            print("Grasp Pose is",grasp_pose)
+            robot.gripper_control(angle=0,force=0)
+            robot.move_updown(grasp_pose,grasp=True,fast_vel=0.4,slow_vel=0.1)
             robot.home(t=1)
-            robot.move_updown(grasp_pose, grasp=False, fast_vel=0.4, slow_vel=0.1)
+            robot.move_updown(grasp_pose,grasp=False,fast_vel=0.4,slow_vel=0.1)
             print("Move to {}".format(objects.names[i]))
 
-
 def test_sapien():
-    robot = Robot(init_node=True)
-    read_Data = Read_Data.Read_Data()
+    robot=Robot(init_node=True)
+    read_Data=Read_Data.Read_Data()
     while not rospy.is_shutdown():
-        poses = []
+        poses=[]
 
-        world_info_list, gazebo_name2true_name, gazebo_name_list = read_Data.get_world_info()
+        world_info_list,gazebo_name2true_name,gazebo_name_list=read_Data.get_world_info()
         for object_info in world_info_list:
-            model_pose = object_info['model_pose']
+            model_pose=object_info['model_pose']
             poses.append(model_pose)
 
         for model_pose in poses:
-            pose = np.array(
-                [model_pose.position.x, model_pose.position.y, model_pose.position.z, model_pose.orientation.x,
-                 model_pose.orientation.y, model_pose.orientation.z, model_pose.orientation.w])
-            grasp_pose = robot.get_pickpose_from_pose(pose)  # Z轴翻转获取物体的抓取Pose
-            print("Grasp Pose is", grasp_pose)
-            robot.gripper_control(angle=0, force=0)
-            robot.move_updown(grasp_pose, grasp=True)
+            pose=np.array([model_pose.position.x,model_pose.position.y,model_pose.position.z,model_pose.orientation.x,model_pose.orientation.y,model_pose.orientation.z,model_pose.orientation.w])
+            grasp_pose=robot.get_pickpose_from_pose(pose)#Z轴翻转获取物体的抓取Pose
+            print("Grasp Pose is",grasp_pose)
+            robot.gripper_control(angle=0,force=0)
+            robot.move_updown(grasp_pose,grasp=True)
             robot.home(t=1)
-            robot.move_updown(grasp_pose, grasp=False)
+            robot.move_updown(grasp_pose,grasp=False)
 
         break
-
 
 def move_home():
     """
     机械臂撞东西之后返回原来的状态
     :return:
     """
-    robot = Robot(init_node=True)
+    robot=Robot(init_node=True)
     while not rospy.is_shutdown():
         robot.getpose_home(3)
         robot.home(t=1)
@@ -580,3 +577,8 @@ if __name__ == '__main__':
     test_sapien()
     # test_gripper()
     # move_home()
+
+
+
+
+

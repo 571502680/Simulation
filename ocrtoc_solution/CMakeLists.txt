@@ -32,7 +32,7 @@ install(DIRECTORY
 
 install(PROGRAMS
   scripts/commit_solution.py
-
+  scripts/Read_Data.py
   scripts/kdl_conversions.py
   scripts/kdl_parser.py
   scripts/quaternion.py

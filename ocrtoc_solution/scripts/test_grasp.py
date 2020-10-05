@@ -11,14 +11,25 @@ from gazebo_msgs.srv import *
 import quaternion
 import tf.transformations as trans_tools
 import math
+'''
+box1 pudding_box  default
+box2 wood_block  default
+box3 jenga  default
 
+can1 potted_meat_can  need to adjust Pi/2
+can2 master_chef_can   default
+
+
+
+
+'''
 modellist = [['bottle1','bleach_cleanser'],['bottle2','mustard_bottle'],['toy1','foam_brick'],['toy2','d_toy_airplane'],['can1','tomato_soup_can'],['can2','master_chef_can'],['box1','wood_block'],['box2','rubiks_cube'],['box3','gelatin_box'],['box4','pudding_box']]
 
 modellist2 = [['box2','jenga']]
 #list contains unusual object,need to find more details by running densefusion
 Need_to_Adjust = {'gelatin_box':[0,0,0,0,math.pi,math.pi/2],'potted_meat_can':[0,0,0,0,math.pi,math.pi/2],'b_toy_airplane':[0,0,0,0,math.pi,math.pi/2],'mustard_bottle':[0,0,0,0,3*math.pi/4,math.pi/2],
                     'bleach_cleanser':[0,0,0,0,3*math.pi/4,math.pi/2],'red_car':[0,0,0,0,math.pi,math.pi/2],'green_car':[0,0,0,0,math.pi,math.pi/2],'correction_fuid':[0,0,0,0,math.pi,math.pi/2],
-                    'pure_zhen':[0,0,0.02,0,math.pi,0],'conditioner':[0,0,0.02,0,math.pi,0]}
+                    'pure_zhen':[0,0,0.02,0,math.pi,0],'conditioner':[0,0,0.02,0,math.pi,0],'jenga':[0,0.05,0,0,math.pi,0]}
 #all cups need to adjust
 
 class Objects1(object):
@@ -36,14 +47,20 @@ class Objects1(object):
         self.xyzqua[:3] = np.array([self.state.pose.position.x,self.state.pose.position.y, self.state.pose.position.z])
         self.xyzqua[3:] = np.array([self.state.pose.orientation.x, self.state.pose.orientation.y, self.state.pose.orientation.z,
                      self.state.pose.orientation.w ] )
-   
+        #self.xyz = (self.state.pose.position.x, self.state.pose.position.y, self.state.pose.position.z)
+        #print(self.xyzqua)
+        #print(self.xyz)
 
 def get_pickpose_from_pose(pose, x=0,y=0,z=0,degreeR=0,degreeP=math.pi,degreeY=0):
-    print(pose)
-    euler = trans_tools.euler_from_quaternion(pose[3:])
-
+    #print(pose)
+    euler = list(trans_tools.euler_from_quaternion(pose[3:]))
+    euler[0] = 0
+    euler[1] = 0
+    print(euler)
+    pose[3:] = trans_tools.quaternion_from_euler(euler[0],euler[1],euler[2])
+    print(pose[3:])
     pose_Matrix=trans_tools.quaternion_matrix(pose[3:])
-    move_xyz = pose[:3] + np.array([-x*math.sin(euler[2]*180/math.pi)-y*math.cos(euler[2]*180/math.pi),-y*math.sin(euler[2]*180/math.pi)-x*math.cos(euler[2]*180/math.pi),z])
+    move_xyz = pose[:3] + np.array([x*math.sin(euler[2])+y*math.cos(euler[2]),y*math.sin(euler[2])+x*math.sin(euler[2]),z])
     pose_Matrix[0:3,3]=np.array(move_xyz.T)
     print(pose_Matrix)
     grasp_Matrix=pose_Matrix.dot(quaternion.euler_matrix(degreeR,degreeP,degreeY))
@@ -75,3 +92,16 @@ for model1 in modellist2:
 
 rospy.sleep(4)
 
+# print range(1,4)
+# print(ur.q)
+# print(ur.p)
+# ur.sin_test()
+# rospy.sleep(1.0)
+# print(ur._num_jnts)
+
+# %%
+# print obj.x[1]
+
+
+
+# %%
