@@ -48,7 +48,8 @@ class DenseFusion_Detector:
             rospy.init_node("DenseFusionInfer")
         #1:导入网络
         if model_path is None:
-            self.model_path="DenseFusion_Lib/models/sapien_posemodel_0.030.pth"
+            # self.model_path="DenseFusion_Lib/models/sapien_posemodel_0.030.pth"
+            self.model_path="DenseFusion_Lib/models/sapien_posemodel_0.022.pth"
         else:
             self.model_path=model_path
 
@@ -118,7 +119,8 @@ class DenseFusion_Detector:
         #4:导入SegNet
         self.segnet=SegNet(input_nbr=3,label_nbr=80)
         if segnet_path is None:
-            self.segnet_path="SegNet_Lib/models/segnet_sapien_0.021.pth"
+            # self.segnet_path="SegNet_Lib/models/segnet_sapien_0.021.pth"
+            self.segnet_path="SegNet_Lib/models/segnet_sapien_0.0148.pth"
         else:
             self.segnet_path=segnet_path
         # self.segnet.load_state_dict(torch.load(self.python_path+self.segnet_path))
@@ -568,9 +570,9 @@ class DenseFusion_Detector:
 
 if __name__ == '__main__':
     densefusion_Detector=DenseFusion_Detector(init_node=True)
-    densefusion_Detector.pub_pose_array()#发布所有物体Pose
+    # densefusion_Detector.pub_pose_array()#发布所有物体Pose
     # densefusion_Detector.check_densefusion("1-1")#确定场景识别精度
-    # densefusion_Detector.see_detect_result(debug=True)#用于查看这个场景的识别结果
+    densefusion_Detector.see_detect_result(debug=True)#用于查看这个场景的识别结果
     # change_pth()#更改网络zip包
 
 
