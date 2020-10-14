@@ -129,6 +129,7 @@ class See_Point_Cloud:
 
             # self.realsense_depth_image=cv_image*10000#realsense的深度图返回的直接是mm
             self.realsense_depth_image[np.isnan(self.realsense_depth_image)]=0
+            self.realsense_depth_image=self.realsense_depth_image*1000
         except CvBridgeError as e:
             print("[Error] realsense_depth_callback occur error {}".format(e))
             return
@@ -147,7 +148,7 @@ class See_Point_Cloud:
 
         #2:inrange,得到mask图片
         print("max:{}  min:{}".format(np.max(self.realsense_depth_image),np.min(self.realsense_depth_image)))
-        ROI=cv.inRange(self.realsense_depth_image,lowerb=0,upperb=340)
+        ROI=cv.inRange(self.realsense_depth_image,lowerb=0,upperb=280)
         cv.imshow("ROI",ROI)
 
 
@@ -159,7 +160,7 @@ class See_Point_Cloud:
             cv.rectangle(self.realsense_bgr_image,(x,y),(x+w,y+h),(0,255,0),3)
 
         cv.imshow("bgr_image",self.realsense_bgr_image)
-        cv.waitKey(3)
+        cv.waitKey(1)
 
 
 
@@ -241,10 +242,6 @@ def see_object_from_realsense():
             if not arrive:
                 robot.getpose_home()
                 print("Arrive Failed,the target pose is:{}".format(pose))
-
-
-
-
 
 
 if __name__ == '__main__':
