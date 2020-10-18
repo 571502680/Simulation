@@ -34,6 +34,12 @@ class See_Point_Cloud:
         self.kinect_depth_image=None
         self.kinect_bgr_image=None
 
+        #realsense的相机参数
+        self.fx=812.0000610351562
+        self.fy=812.0000610351562
+        self.cx=320.0
+        self.cy=240.0
+
         #####初始化中不开启两个深度摄像头,有需求的时候再进行调用,否则速度很慢
         # callback_lambda=lambda x:self.realsense_depth_callback(x,see_image=False)
         # realsense_depth_sub=rospy.Subscriber("/realsense/depth/image_raw",Image,callback_lambda)
@@ -52,7 +58,7 @@ class See_Point_Cloud:
     def realsense_depth_callback(self,data,see_image=False):
         try:
             cv_image=self.bridge.imgmsg_to_cv2(data,'32FC1')
-            self.realsense_depth_image=cv_image*10000
+            self.realsense_depth_image=cv_image*1000
             self.realsense_depth_image[np.isnan(self.realsense_depth_image)]=0
         except CvBridgeError as e:
             print("[Error] realsense_depth_callback occur error {}".format(e))
@@ -107,22 +113,30 @@ class See_Point_Cloud:
         realsense_depth_sub=rospy.Subscriber("/realsense/depth/image_raw",Image,callback_lambda)
 
     ####################################获取物体函数##################################
+    def begin_get_realsense_images(self):
+        """
+        开启信息获取
+        :return:
+        """
+        rospy.Subscriber("/realsense/depth/image_raw",Image,self.realsense_depth_callback)
+        rospy.Subscriber("/realsense/color/image_raw",Image,self.realsense_bgr_image_callback)
+
     def begin_get_object_realsense(self,see_image=False):
         """
         开启识别线程
         :param see_image:
         :return:
         """
-        callback_lambda1=lambda x:self.process_realsense_depth_image(x,see_image=see_image)
+        callback_lambda1=lambda x:self.depth_process_callback(x)
         realsense_depth_sub=rospy.Subscriber("/realsense/depth/image_raw",Image,callback_lambda1)
         rospy.Subscriber("/realsense/color/image_raw",Image,self.realsense_bgr_image_callback)
 
     def generate_kernel(self,x,y):
         return np.ones((x,y),dtype=np.uint8)
 
-    def process_realsense_depth_image(self,data,see_image=False):
+    def process_realsense_depth_image(self,data,process_image=False,see_image=False):
         """
-
+        用于处理深度图像,得到对应的轮廓
         :param data:
         :param see_image:
         :return:
@@ -163,12 +177,152 @@ class See_Point_Cloud:
         #然后采用区域分割,获取对应的bbox,得到bbox之后选择窄的方向生成抓取点
         _,contours,_=cv.findContours(ROI,cv.RETR_TREE,cv.CHAIN_APPROX_SIMPLE)
         for contour in contours:
-            Rect=cv.boundingRect(contour)
-            x,y,w,h=Rect
-            cv.rectangle(self.realsense_bgr_image,(x,y),(x+w,y+h),(0,255,0),3)
+            Rect=cv.minAreaRect(contour)
+            draw_box=cv.boxPoints(Rect)
+            draw_box=np.int0(draw_box)
+            cv.drawContours(self.realsense_bgr_image,[draw_box],0,(0,0,255),3)
 
         cv.imshow("bgr_image",self.realsense_bgr_image)
         cv.waitKey(1)
+
+    def process_rotate_rect(self,rotate_rect):
+        """
+        用于处理旋转矩形,得到一个长短边正确的旋转矩形
+        :param rotate_rect:
+        :return:
+        """
+        center,wh,xita=rotate_rect
+        width=wh[0]
+        height=wh[1]
+        if width>height:
+            xita=xita+90
+            correct_width=height
+            correct_height=width
+            return center,(correct_width,correct_height),xita
+        else:
+            return rotate_rect
+
+    def get_mask(self,see_image=False,debug=False):
+        """
+        通过深度分割,得到物体的center,然后对物体的center进行抓取操作
+        :param see_image:
+        :param debug:
+        :return:
+        """
+        ROI=cv.inRange(self.realsense_depth_image,lowerb=0,upperb=495)
+        if debug:
+            print("max:{}  min:{}".format(np.max(self.realsense_depth_image),np.min(self.realsense_depth_image)))
+            cv.imshow("raw_ROI",ROI)
+        ROI=cv.morphologyEx(ROI,cv.MORPH_OPEN,kernel=self.generate_kernel(3,3))
+        ROI=cv.morphologyEx(ROI,cv.MORPH_CLOSE,kernel=self.generate_kernel(6,6))
+        ROI=cv.morphologyEx(ROI,cv.MORPH_OPEN,kernel=self.generate_kernel(10,10))
+        if see_image:
+            cv.imshow("ROI",ROI)
+
+        #然后采用区域分割,获取对应的bbox,得到bbox之后选择窄的方向生成抓取点
+        _,contours,_=cv.findContours(ROI,cv.RETR_TREE,cv.CHAIN_APPROX_SIMPLE)
+        for contour in contours:
+            if cv.contourArea(contour)<3000:
+                continue
+
+
+            rotate_rect=cv.minAreaRect(contour)
+            rotate_rect=self.process_rotate_rect(rotate_rect)#确保长宽正确
+            if see_image:
+                #绘制物体轮廓
+                draw_box=cv.boxPoints(rotate_rect)
+                draw_box=np.int0(draw_box)
+                cv.drawContours(self.realsense_bgr_image,[draw_box],0,(0,0,255),3)
+
+                #绘制抓取中心点
+                grasp_rect=(rotate_rect[0],(rotate_rect[1][0]+50,100),rotate_rect[2])
+                draw_box=cv.boxPoints(grasp_rect)
+                draw_box=np.int0(draw_box)
+                cv.drawContours(self.realsense_bgr_image,[draw_box],0,(0,255,0),3)
+                if debug:
+                    print("Find good rect:{}".format(rotate_rect))
+                    print("contour area:{}".format(cv.contourArea(contour)))#最小的认为是5000
+
+        if see_image:
+            cv.imshow("bgr_image",self.realsense_bgr_image)
+            cv.waitKey(0)
+
+    def get_centers(self,see_image=False,debug=False):
+        """
+        通过深度分割,得到物体的center,然后对物体的center进行抓取操作
+        :param see_image:
+        :param debug:
+        :return:
+        """
+        centers=[]
+
+        ROI=cv.inRange(self.realsense_depth_image,lowerb=0,upperb=495)
+        if debug:
+            print("max:{}  min:{}".format(np.max(self.realsense_depth_image),np.min(self.realsense_depth_image)))
+            cv.imshow("raw_ROI",ROI)
+        ROI=cv.morphologyEx(ROI,cv.MORPH_OPEN,kernel=self.generate_kernel(3,3))
+        ROI=cv.morphologyEx(ROI,cv.MORPH_CLOSE,kernel=self.generate_kernel(6,6))
+        ROI=cv.morphologyEx(ROI,cv.MORPH_OPEN,kernel=self.generate_kernel(10,10))
+        if debug:
+            cv.imshow("ROI",ROI)
+
+        #然后采用区域分割,获取对应的bbox,得到bbox之后选择窄的方向生成抓取点
+        _,contours,_=cv.findContours(ROI,cv.RETR_TREE,cv.CHAIN_APPROX_SIMPLE)
+        for contour in contours:
+            if cv.contourArea(contour)<3000:
+                continue
+            rotate_rect=cv.minAreaRect(contour)
+            rotate_rect=self.process_rotate_rect(rotate_rect)#确保长宽正确
+            centers.append(rotate_rect[0])
+            if see_image:
+                #绘制物体轮廓
+                draw_box=cv.boxPoints(rotate_rect)
+                draw_box=np.int0(draw_box)
+                cv.drawContours(self.realsense_bgr_image,[draw_box],0,(0,0,255),3)
+                cv.putText(self.realsense_bgr_image,"{}".format(len(centers)),(int(rotate_rect[0][0]),int(rotate_rect[0][1])),cv.FONT_HERSHEY_SIMPLEX,0.8,(0,0,255),2)
+
+                #绘制抓取中心点
+                # grasp_rect=(rotate_rect[0],(rotate_rect[1][0]+50,100),rotate_rect[2])
+                # draw_box=cv.boxPoints(grasp_rect)
+                # draw_box=np.int0(draw_box)
+                # cv.drawContours(self.realsense_bgr_image,[draw_box],0,(0,255,0),3)
+                if debug:
+                    print("Find good rect:{}".format(rotate_rect))
+                    print("contour area:{}".format(cv.contourArea(contour)))#最小的认为是5000
+
+        if see_image:
+            cv.imshow("Center BGR Image",self.realsense_bgr_image)
+            cv.waitKey(1)
+
+        return centers
+
+    def get_xyz_from_point(self,center,range_area=2):
+        """
+        这里面通过给定点获取对应的xyz值
+        :param center: 图像中心点
+        :return:
+        """
+        u,v=center
+        u=int(u)
+        v=int(v)
+        center_Z=[]
+        #1:对center_Z进行排序,得到中值作为深度
+        try:
+            for x in range(-range_area,range_area+1):
+                for y in range(-range_area,range_area+1):
+                    center_Z.append(self.realsense_depth_image[v-y,u-x])#采用行列索引
+            center_Z.sort()
+            Z=center_Z[int(len(center_Z)/2)]
+        except:
+            try:
+                Z=self.realsense_depth_image[v,u]
+            except:
+                Z=0
+
+        #2:使用外参进行反解
+        X=(u-self.cx)*Z/self.fx
+        Y=(v-self.cy)*Z/self.fy
+        return X,Y,Z
 
     def see_depth_image(self):
         robot=robot_control.Robot()
@@ -297,9 +451,66 @@ def get_correct_realsense_pose():
         time.sleep(20)
         # break
 
+def get_grasp_rect():
+    see_Point_Cloud=See_Point_Cloud(init_node=True)
+    see_Point_Cloud.begin_get_realsense_images()
+    robot=robot_control.Robot()
+    move_pose=see_Point_Cloud.generate_realsense_movepoints()#获取桌面运动点,进行桌面平动
+    robot.getpose_home(t=1)
+    while not rospy.is_shutdown():
+        # robot.getpose_home(t=1)
+        #1:运动到待抓取位置
+        for pose in move_pose:
+            # print("Target Pose is :{}".format(pose))
+            arrive=robot.motion_generation(pose[np.newaxis,:],vel=0.5)
+
+            if not arrive:
+                robot.getpose_home()
+                print("Arrive Failed,the target pose is:{}".format(pose))
+
+            #2:解析深度图得到对应的Mask,然后获取图像中的中心点:
+            if see_Point_Cloud.realsense_depth_image is not None:
+                see_Point_Cloud.get_mask(see_image=True,debug=False)
+
+def move_object_upper():
+    """
+    用于运动到检测到的物体上方
+    :return:
+    """
+    see_Point_Cloud=See_Point_Cloud(init_node=True)
+    see_Point_Cloud.begin_get_realsense_images()
+    robot=robot_control.Robot()
+    move_pose=see_Point_Cloud.generate_realsense_movepoints()#获取桌面运动点,进行桌面平动
+    robot.getpose_home(t=1)
+    while not rospy.is_shutdown():
+        # robot.getpose_home(t=1)
+        #1:运动到待抓取位置
+        for pose in move_pose:
+            # print("Target Pose is :{}".format(pose))
+            arrive=robot.motion_generation(pose[np.newaxis,:],vel=0.5)
+
+            if not arrive:
+                robot.getpose_home()
+                print("Arrive Failed,the target pose is:{}".format(pose))
+
+            #2:解析深度图得到对应的Mask,然后获取图像中的中心点:
+            if see_Point_Cloud.realsense_depth_image is not None:
+                centers=see_Point_Cloud.get_centers(see_image=True,debug=False)
+                for center in centers:
+                    x,y,z=see_Point_Cloud.get_xyz_from_point(center)
+                    temp_pose=pose.copy()
+                    temp_pose[0]=temp_pose[0]+x/1000#变换到m制度
+                    temp_pose[1]=temp_pose[1]-y/1000
+                    robot.motion_generation(temp_pose[np.newaxis,:],vel=0.5)
+                    see_Point_Cloud.get_mask(see_image=True)
+                    print("Arrive one obeject place")
+                    time.sleep(1)
+            print("Robot will go to the next big Pose")
+
+
 
 if __name__ == '__main__':
-    see_object_from_realsense()
+    move_object_upper()
 
 
 
