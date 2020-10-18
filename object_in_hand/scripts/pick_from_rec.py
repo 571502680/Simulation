@@ -3,7 +3,7 @@
 """
 这里面尝试这进行点云的处理,看看能不能直接获取object的点云
 2020.10.18:
-    希望通过realsense获取物体的矩形框,然后尝试进行抓取,看看是否能成功抓取物体.要完成抓取一个物体,然后运动到kinect摄像头面前的工作.
+    基于深度图阈值分割得到的mask,得到矩形框,然后生成对应的抓取点(即一个小的矩形框)
 """
 #comman package
 import os
@@ -22,6 +22,8 @@ from sensor_msgs.msg import Image,CameraInfo
 #my function
 import robot_control
 import quaternion
+import Read_Data
+
 class See_Point_Cloud:
     def __init__(self,init_node=False):
         if init_node:
@@ -296,6 +298,19 @@ def get_correct_realsense_pose():
         robot.motion_generation(pose[np.newaxis,:],vel=0.2)
         time.sleep(20)
         # break
+
+def get_pick_rect():
+    """
+    从Mask中获取抓取的矩形
+    :return:
+    """
+    see_Point_Cloud=See_Point_Cloud(init_node=True)
+    read_Data=Read_Data.Read_Data()
+
+
+
+
+
 
 
 if __name__ == '__main__':
