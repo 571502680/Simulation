@@ -254,8 +254,14 @@ class See_Point_Cloud:
         :param debug:
         :return:
         """
+        self.realsense_depth_image=None
+        while True:
+            if self.realsense_depth_image is not None:
+                break
+            else:
+                time.sleep(0.5)
+                print("[Warning] get_centers self.realsense_depth_image is None")
         centers=[]
-
         ROI=cv.inRange(self.realsense_depth_image,lowerb=0,upperb=495)
         if debug:
             print("max:{}  min:{}".format(np.max(self.realsense_depth_image),np.min(self.realsense_depth_image)))
@@ -263,7 +269,7 @@ class See_Point_Cloud:
         ROI=cv.morphologyEx(ROI,cv.MORPH_OPEN,kernel=self.generate_kernel(3,3))
         ROI=cv.morphologyEx(ROI,cv.MORPH_CLOSE,kernel=self.generate_kernel(6,6))
         ROI=cv.morphologyEx(ROI,cv.MORPH_OPEN,kernel=self.generate_kernel(10,10))
-        if debug:
+        if see_image:
             cv.imshow("ROI",ROI)
 
         #然后采用区域分割,获取对应的bbox,得到bbox之后选择窄的方向生成抓取点
@@ -323,6 +329,51 @@ class See_Point_Cloud:
         X=(u-self.cx)*Z/self.fx
         Y=(v-self.cy)*Z/self.fy
         return X,Y,Z
+
+    def get_grasprect(self,grasp_number,see_image=False,debug=False):
+        """
+        这里面进行精确的抓取点获取,从而进行抓取执行
+        :return:
+        """
+        self.realsense_depth_image=None
+        while True:
+            if self.realsense_depth_image is not None:
+                break
+            else:
+                time.sleep(0.5)
+                print("[Warning] get_grasprect self.realsense_depth_image is None")
+        ROI=cv.inRange(self.realsense_depth_image,lowerb=0,upperb=295)#这里深度阈值需要改一下
+        ROI=cv.morphologyEx(ROI,cv.MORPH_OPEN,kernel=self.generate_kernel(3,3))
+        ROI=cv.morphologyEx(ROI,cv.MORPH_CLOSE,kernel=self.generate_kernel(6,6))
+        ROI=cv.morphologyEx(ROI,cv.MORPH_OPEN,kernel=self.generate_kernel(10,10))
+        if debug:
+            cv.imshow("grasprec_ROI",ROI)
+
+        #然后采用区域分割,获取对应的bbox,得到bbox之后选择窄的方向生成抓取点
+        _,contours,_=cv.findContours(ROI,cv.RETR_TREE,cv.CHAIN_APPROX_SIMPLE)
+        for contour in contours:
+            if cv.contourArea(contour)<5000:
+                continue
+            rotate_rect=cv.minAreaRect(contour)
+            rotate_rect=self.process_rotate_rect(rotate_rect)#确保长宽正确
+            if see_image:
+                #绘制物体轮廓
+                draw_box=cv.boxPoints(rotate_rect)
+                draw_box=np.int0(draw_box)
+                cv.drawContours(self.realsense_bgr_image,[draw_box],0,(0,0,255),3)
+
+                #绘制抓取中心点
+                grasp_rect=(rotate_rect[0],(rotate_rect[1][0]+50,100),rotate_rect[2])
+                draw_box=cv.boxPoints(grasp_rect)
+                draw_box=np.int0(draw_box)
+                cv.drawContours(self.realsense_bgr_image,[draw_box],0,(0,255,0),3)
+                cv.putText(self.realsense_bgr_image,"{}".format(grasp_number),(30,30),cv.FONT_HERSHEY_SIMPLEX,0.8,(0,255,0),3)
+                if debug:
+                    print("Find good rect:{}".format(rotate_rect))
+                    print("contour area:{}".format(cv.contourArea(contour)))#最小的认为是5000
+        if see_image:
+            cv.imshow("grasprect_BGR_image",self.realsense_bgr_image)
+            cv.waitKey(0)
 
     def see_depth_image(self):
         robot=robot_control.Robot()
@@ -488,25 +539,26 @@ def move_object_upper():
         for pose in move_pose:
             # print("Target Pose is :{}".format(pose))
             arrive=robot.motion_generation(pose[np.newaxis,:],vel=0.5)
+            time.sleep(0.5)
 
             if not arrive:
                 robot.getpose_home()
                 print("Arrive Failed,the target pose is:{}".format(pose))
 
             #2:解析深度图得到对应的Mask,然后获取图像中的中心点:
-            if see_Point_Cloud.realsense_depth_image is not None:
-                centers=see_Point_Cloud.get_centers(see_image=True,debug=False)
-                for center in centers:
-                    x,y,z=see_Point_Cloud.get_xyz_from_point(center)
-                    temp_pose=pose.copy()
-                    temp_pose[0]=temp_pose[0]+x/1000#变换到m制度
-                    temp_pose[1]=temp_pose[1]-y/1000
-                    robot.motion_generation(temp_pose[np.newaxis,:],vel=0.5)
-                    see_Point_Cloud.get_mask(see_image=True)
-                    print("Arrive one obeject place")
-                    time.sleep(1)
-            print("Robot will go to the next big Pose")
+            centers=see_Point_Cloud.get_centers(see_image=True,debug=False)
+            for count_i,center in enumerate(centers):
+                x,y,z=see_Point_Cloud.get_xyz_from_point(center)
+                #移动到物体上方
+                temp_pose=pose.copy()
+                temp_pose[0]=temp_pose[0]+x/1000#变换到m制度
+                temp_pose[1]=temp_pose[1]-y/1000
+                temp_pose[2]=temp_pose[2]-0.2#降低Z值,从而尽可能地只看到一个物体
+                robot.motion_generation(temp_pose[np.newaxis,:],vel=0.5)
+                #获取更精确的抓取目标
+                see_Point_Cloud.get_grasprect(grasp_number=count_i,see_image=True)
 
+            print("Robot will go to the next big Pose")
 
 
 if __name__ == '__main__':
