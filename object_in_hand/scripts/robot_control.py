@@ -23,7 +23,9 @@ from kdl_conversions import *
 import tf.transformations as trans_tools
 
 class Robot(object):
-    def __init__(self, init_node=False, node_name='test', base_link ="world", tip_link = "robotiq_2f_85_ee_link"):
+    # def __init__(self, init_node=False, node_name='test', base_link ="world", tip_link = "robotiq_2f_85_ee_link"):
+    def __init__(self, init_node=False, node_name='test', base_link ="world", tip_link = "realsense_camera_link"):
+    # def __init__(self, init_node=False, node_name='test', base_link ="world", tip_link = "realSense_depth_frame"):
         if init_node:
             rospy.init_node(node_name)
         # robot state
