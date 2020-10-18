@@ -570,9 +570,9 @@ class DenseFusion_Detector:
 
 if __name__ == '__main__':
     densefusion_Detector=DenseFusion_Detector(init_node=True)
-    # densefusion_Detector.pub_pose_array()#发布所有物体Pose
+    densefusion_Detector.pub_pose_array()#发布所有物体Pose
     # densefusion_Detector.check_densefusion("1-1")#确定场景识别精度
-    densefusion_Detector.see_detect_result(debug=True)#用于查看这个场景的识别结果
+    # densefusion_Detector.see_detect_result(debug=True)#用于查看这个场景的识别结果
     # change_pth()#更改网络zip包
 
 
