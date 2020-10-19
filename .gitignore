@@ -60,6 +60,7 @@ temp*.py
 vision_process/scripts/ALi_Dataset
 vision_process/scripts/ALi_Dataset/data
 vision_process/scripts/ALi_Dataset/models
+vision_process/scripts/ALi_Dataset
 
 
 
