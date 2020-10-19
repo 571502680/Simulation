@@ -23,7 +23,9 @@ from kdl_conversions import *
 import tf.transformations as trans_tools
 
 class Robot(object):
-    def __init__(self, init_node=False, node_name='test', base_link ="world", tip_link = "robotiq_2f_85_ee_link"):
+    # def __init__(self, init_node=False, node_name='test', base_link ="world", tip_link = "robotiq_2f_85_ee_link"):
+    def __init__(self, init_node=False, node_name='test', base_link ="world", tip_link = "realsense_camera_link"):
+    # def __init__(self, init_node=False, node_name='test', base_link ="world", tip_link = "realSense_depth_frame"):
         if init_node:
             rospy.init_node(node_name)
         # robot state
@@ -166,9 +168,11 @@ class Robot(object):
         qd = self.inverse_kinematics(x[:3],x[3:])
         if qd is None:
             rospy.logerr('qd is None, Inverse kinematics fail!!!')
+            return False
 
         else:
             self.move_to_joint(qd, t )
+            return True
 
     def home(self, t=10):
         p = np.array([ 1.55986781, -2.1380509 ,  2.49498554, -1.93086818, -1.5671494 , 0])
