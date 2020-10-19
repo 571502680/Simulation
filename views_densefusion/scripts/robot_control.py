@@ -561,6 +561,7 @@ def move_realsense():
     br=tf.TransformBroadcaster()
     while not rospy.is_shutdown():
         robot.getpose_home(t=1)
+        robot.home(1)
         #1:获取所有物体的Pose
         world_info_list,gazebo_name2true_name,gazebo_name_list=read_Data.get_world_info()
 
@@ -571,14 +572,16 @@ def move_realsense():
             model_pose_array=np.array([model_pose.position.x,model_pose.position.y,model_pose.position.z,model_pose.orientation.x,model_pose.orientation.y,model_pose.orientation.z,model_pose.orientation.w])
             grasp_pose=robot.get_pickpose_from_pose(model_pose_array)
             target_pose=grasp_pose.copy()
-            target_pose[0]=target_pose[0]-0.1
+            target_pose[0]=target_pose[0]-0.2
             target_pose[2]=target_pose[2]+0.3
-            # target_pose[3:]=np.array([-0.33775, 0.34244, -0.62195, 0.61793])
+            target_pose[3:]=trans_tools.quaternion_from_euler(0,math.pi*0.9,0)
             # br.sendTransform(translation=target_pose[:3],rotation=target_pose[3:],time=rospy.Time.now(),child="pudding_box",parent="table")
             # print("New target pose is:{}".format(target_pose))
             robot.motion_generation(target_pose[np.newaxis,:],vel=0.4)
+            time.sleep(1)
+            # robot.home(1)
             print("Arrive the object:{}".format(true_name))
-            time.sleep(5)
+
 
 def move_robot():
     """
@@ -596,13 +599,16 @@ def check_pose():
     read_Data=Read_Data.Read_Data()
     br=tf.TransformBroadcaster()
     while not rospy.is_shutdown():
+        robot.getpose_home()
 
         target_pose=np.array([-0.06687973,0.34906217,0.00986291 ,0.02480055 , 0.99961374 , 0.01102886,0.00597148])#这个写死,用于进行debug
         br.sendTransform(translation=target_pose[:3],rotation=target_pose[3:],time=rospy.Time.now(),child="pudding_box",parent="world")
-        target_pose[0]=target_pose[0]-0.1
-        target_pose[2]=target_pose[2]+0.25
-        target_pose[3:]=target_pose[3:].dot(quaternion.euler_matrix(math.pi*0.5,0,0,))
+        target_pose[0]=target_pose[0]-0.3
+        target_pose[2]=target_pose[2]+0.3
+        target_pose[3:]=trans_tools.quaternion_from_euler(0,math.pi*0.9,0)
+        # target_pose[3:]=trans_tools.quaternion_from_euler(-math.pi*0.4,0,-math.pi*0.5)
         br.sendTransform(translation=target_pose[:3],rotation=target_pose[3:],time=rospy.Time.now(),child="target",parent="world")
+        robot.motion_generation(target_pose[np.newaxis,:])
 
         # target_pose[3:]=np.array([-0.33775, 0.34244, -0.62195, 0.61793])
 
@@ -614,8 +620,8 @@ if __name__ == '__main__':
     # test_sapien()
     # test_gripper()
     # move_home()
-    # move_realsense()
-    check_pose()
+    move_realsense()
+    # check_pose()
     # move_robot()
 
 

@@ -66,14 +66,22 @@ class DenseFusion_Detector:
         self.bs=1
 
         #图像参数
-        self.img_width=720
-        self.img_length=1280
+        # self.img_width=720
+        # self.img_length=1280
+        self.img_width=480
+        self.img_length=640
         self.xmap = np.array([[j for i in range(self.img_length)] for j in range(self.img_width)])
         self.ymap = np.array([[i for i in range(self.img_length)] for j in range(self.img_width)])
-        self.cam_cx =  640.5
-        self.cam_cy =  360.5
-        self.cam_fx =  1120.1199067175087
-        self.cam_fy =  1120.1199067175087
+        # self.cam_cx =  640.5
+        # self.cam_cy =  360.5
+        # self.cam_fx =  1120.1199067175087
+        # self.cam_fy =  1120.1199067175087
+        self.cam_cx =  320.5
+        self.cam_cy =  240.5
+        self.cam_fx =  812
+        self.cam_fy =  812
+
+
         self.camera_matrix=np.array([[self.cam_cx,0,self.cam_fx],[0,self.cam_cy,self.cam_fy],[0,0,1]])
         self.dist=np.array([0,0,0,0,0],dtype=np.float)
         self.cam_scale=10000
@@ -361,6 +369,115 @@ class DenseFusion_Detector:
         print("DenseFuison Detect Success")
         return save_result_list
 
+    def get_poses_withlabel_r(self,rgb_image,depth_image,label_image,object_list,debug=False):
+        """
+        送入rgb图片,深度图,Mask图,以及图片中的object_id,就可以得到所有物体的Pose
+        @param rgb_image: rgb图片(而非bgr_image)
+        @param depth_image: 深度图
+        @param label_image: Mask图
+        @param object_list: 图片中的对应索引
+        @param debug: 是否进行debug,即是否展示结果
+        @return:
+        """
+        save_result_list=[]#保存结果的list
+        if debug:
+            show_image=rgb_image.copy()
+
+        for object_id in object_list:
+
+            #1:获取深度图的iou
+            mask_depth = ma.getmaskarray(ma.masked_not_equal(depth_image, 0))#提取出非0的depth_image
+            mask_label = ma.getmaskarray(ma.masked_equal(label_image, object_id))#object_id对应的mask
+            mask = mask_label * mask_depth  # 这个mask就是一个物体的轮廓
+            rmin, rmax, cmin, cmax = self.get_bbox_from_labelimage(mask)
+
+            if debug:
+                #绘制对应物体的bbox
+                cv.rectangle(show_image,(cmin,rmin),(cmax,rmax),(0,255,0),2)
+                cv.putText(show_image,"{}".format(object_id),(cmin,rmin),cv.FONT_HERSHEY_SIMPLEX,0.8,(0,255,0),2)
+
+            #2:选中图片需要索引的值
+            choose = mask[rmin:rmax, cmin:cmax].flatten().nonzero()[0]
+            #2.1:如果choose超过选取的1000个点,则随机进行选取
+            if len(choose) > self.num_points:
+                c_mask = np.zeros(len(choose), dtype=int)
+                c_mask[:self.num_points] = 1
+                np.random.shuffle(c_mask)
+                choose = choose[c_mask.nonzero()]
+            #2.2:否则进行pad操作
+            else:
+                choose = np.pad(choose, (0, self.num_points - len(choose)), 'wrap')
+
+            #3:基于choose,得到对应的深度点和RGB点
+            #3.1:深度图点
+            depth_masked = depth_image[rmin:rmax, cmin:cmax].flatten()[choose][:, np.newaxis].astype(np.float32)
+            xmap_masked =self. xmap[rmin:rmax, cmin:cmax].flatten()[choose][:, np.newaxis].astype(np.float32)
+            ymap_masked = self.ymap[rmin:rmax, cmin:cmax].flatten()[choose][:, np.newaxis].astype(np.float32)
+            choose = np.array([choose])
+            pt2 = depth_masked / self.cam_scale
+            pt0 = (ymap_masked - self.cam_cx) * pt2 / self.cam_fx
+            pt1 = (xmap_masked - self.cam_cy) * pt2 / self.cam_fy
+            cloud = np.concatenate((pt0, pt1, pt2), axis=1)#得到的点云
+            cloud = torch.from_numpy(cloud.astype(np.float32))
+
+            #3.2:RGB点
+            img_masked = np.array(rgb_image)[:, :, :3]
+            img_masked = np.transpose(img_masked, (2, 0, 1))
+            img_masked = img_masked[:, rmin:rmax, cmin:cmax]
+            choose = torch.LongTensor(choose.astype(np.int32))
+            img_masked = self.norm(torch.from_numpy(img_masked.astype(np.float32)))
+
+            #3.3:获取点云的索引点
+            index = torch.LongTensor([object_id - 1])#这个用于选取点云参数
+
+            #4:将值送入CUDA中
+            cloud = Variable(cloud).cuda()
+            choose = Variable(choose).cuda()
+            img_masked = Variable(img_masked).cuda()
+            index = Variable(index).cuda()
+            cloud = cloud.view(1, self.num_points, 3)
+            img_masked = img_masked.view(1, 3, img_masked.size()[1], img_masked.size()[2])
+
+            #5:通过DenseFusion生成预测RT
+            pred_r, pred_t, pred_c, emb = self.estimator(img_masked, cloud, choose, index)  # 得到了预测的R,T矩阵,以及对应的Center
+            pred_r = pred_r / torch.norm(pred_r, dim=2).view(1,self.num_points, 1)
+            pred_c = pred_c.view(self.bs, self.num_points)
+            how_max, which_max = torch.max(pred_c, 1)
+            pred_t = pred_t.view(self.bs * self.num_points, 1, 3)
+            points = cloud.view(self.bs * self.num_points, 1, 3)
+
+            my_r = pred_r[0][which_max[0]].view(-1).cpu().data.numpy()
+            my_t = (points + pred_t)[which_max[0]].view(-1).cpu().data.numpy()
+
+            save_result_list.append({'object_id':object_id,'rot':my_r,'trans':my_t})
+
+
+        if debug:
+            show_points=[]
+            axis_point=o3d.geometry.TriangleMesh.create_coordinate_frame(size=0.1)
+            show_points.append(axis_point)
+            cv.imshow("show_image",show_image)
+            for result in save_result_list:
+                object_id=result['object_id']
+                rot=result['rot']
+                trans=result['trans']
+                Pose_Matrix=quaternion_matrix(rot)
+                Pose_Matrix[0:3,3]=trans.T
+                origin_cloud=o3d.geometry.PointCloud()
+                origin_cloud.points=o3d.utility.Vector3dVector(self.object_points[object_id])
+                origin_cloud.transform(Pose_Matrix)
+                axis_point=o3d.geometry.TriangleMesh.create_coordinate_frame(size=0.1)
+                axis_point.transform(Pose_Matrix)
+
+                show_points.append(origin_cloud)
+                show_points.append(axis_point)
+            cv.waitKey(0)
+            o3d.visualization.draw_geometries(show_points)
+
+        print("DenseFuison Detect Success")
+        return save_result_list
+
+
     def get_pose(self,bgr_image,depth_image,debug=False):
         """
         送入bgr图片和深度图,返回视野中所有物体在摄像头坐标系下的Pose
@@ -374,7 +491,8 @@ class DenseFusion_Detector:
         #2:产生所有位置
         object_list=self.get_objectlist_from_labelimage(label_image)
         rgb_image=cv.cvtColor(bgr_image,cv.COLOR_BGR2RGB)
-        pose_results=self.get_poses_withlabel(rgb_image,depth_image,label_image,object_list,debug=debug)
+        # pose_results=self.get_poses_withlabel(rgb_image,depth_image,label_image,object_list,debug=debug)
+        pose_results=self.get_poses_withlabel_r(rgb_image,depth_image,label_image,object_list,debug=debug)
         return pose_results
 
     def see_detect_result_k(self,debug=False):
@@ -576,7 +694,6 @@ class DenseFusion_Detector:
         # print("average_dist:",average_dist/len(world_info_list))
         # print("average_rot_dist",average_rot_dist/len(world_info_list))
 
-
     def check_densefusion_r(self,scene_id="1-1",debug=True):
         """
         这里面用于确定DenseFusion的姿态识别和目标的姿态识别之间的差距
@@ -594,6 +711,8 @@ class DenseFusion_Detector:
         with torch.no_grad():
             while not rospy.is_shutdown():
                 if read_Data.bgr_image_r is not None and read_Data.depth_image_r is not None:
+                    # read_Data.bgr_image_r=cv.resize(read_Data.bgr_image_r,(self.img_width,self.img_length))
+                    # read_Data.depth_image_r=cv.resize(read_Data.depth_image_r,(self.img_width,self.img_length))
                     pose_result=self.get_pose(read_Data.bgr_image_r,read_Data.depth_image_r,debug=debug)
                     poseinworld_result=self.get_worldframe_pose(pose_result)
                     objecd_id_list,poses_list=self.get_pubinfo(poseinworld_result)
