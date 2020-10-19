@@ -21,6 +21,8 @@ import quaternion
 from kdl_conversions import *
 #transform
 import tf.transformations as trans_tools
+import Read_Data
+import tf
 
 class Robot(object):
     def __init__(self, init_node=False, node_name='test', base_link ="world", tip_link = "robotiq_2f_85_ee_link"):
@@ -187,6 +189,20 @@ class Robot(object):
         p = np.array([ 1.55986781, -2.1380509 ,  1.5, -1.93086818, -1.5671494 , 0])
         self.move_to_joint(p,t)
 
+    def temp_pose(self, t=1):
+        """
+        用于进行随机pose确定的
+        :param t:
+        :return:
+        """
+        p = np.array([ 1.55986781, -2.1380509 ,  1.5, -1.5, -1.5671494 , 0])
+        self.move_to_joint(p,t)
+
+    def realsense_home(self,t=1):
+        # p = np.array([ 1.55986781, -2.1380509 ,  1.5, -1.93086818, -1.5671494 , math.pi])
+        p = np.array([ 1.55986781, -math.pi*0.75,  math.pi/2, -math.pi*0.3, -1.5671494 , math.pi])
+        self.move_to_joint(p,t)
+
     def slerp(self, v0, v1, t_array):
         """Spherical linear interpolation."""
         # from https://en.wikipedia.org/wiki/Slerp
@@ -326,7 +342,6 @@ class Robot(object):
         middle_angle=np.linspace(0,target_angle,num=points)
         for angle in middle_angle:
             self.gripper_control(angle,force)
-
 
     @property
     def x(self):
@@ -540,11 +555,68 @@ def move_home():
         robot.getpose_home(3)
         robot.home(t=1)
 
+def move_realsense():
+    robot=Robot(init_node=True)
+    read_Data=Read_Data.Read_Data()
+    br=tf.TransformBroadcaster()
+    while not rospy.is_shutdown():
+        robot.getpose_home(t=1)
+        #1:获取所有物体的Pose
+        world_info_list,gazebo_name2true_name,gazebo_name_list=read_Data.get_world_info()
+
+        #2:运动到所有物体正上方的一个角度(X向后0.2,Z向上0.8,再翻转
+        for each_object in world_info_list:
+            model_pose=each_object['model_pose']
+            true_name=each_object['true_name']
+            model_pose_array=np.array([model_pose.position.x,model_pose.position.y,model_pose.position.z,model_pose.orientation.x,model_pose.orientation.y,model_pose.orientation.z,model_pose.orientation.w])
+            grasp_pose=robot.get_pickpose_from_pose(model_pose_array)
+            target_pose=grasp_pose.copy()
+            target_pose[0]=target_pose[0]-0.1
+            target_pose[2]=target_pose[2]+0.3
+            # target_pose[3:]=np.array([-0.33775, 0.34244, -0.62195, 0.61793])
+            # br.sendTransform(translation=target_pose[:3],rotation=target_pose[3:],time=rospy.Time.now(),child="pudding_box",parent="table")
+            # print("New target pose is:{}".format(target_pose))
+            robot.motion_generation(target_pose[np.newaxis,:],vel=0.4)
+            print("Arrive the object:{}".format(true_name))
+            time.sleep(5)
+
+def move_robot():
+    """
+    机械臂撞东西之后返回原来的状态
+    :return:
+    """
+    robot=Robot(init_node=True)
+    while not rospy.is_shutdown():
+        robot.getpose_home(1)
+        robot.temp_pose(t=1)
+        time.sleep(5)
+
+def check_pose():
+    robot=Robot(init_node=True)
+    read_Data=Read_Data.Read_Data()
+    br=tf.TransformBroadcaster()
+    while not rospy.is_shutdown():
+
+        target_pose=np.array([-0.06687973,0.34906217,0.00986291 ,0.02480055 , 0.99961374 , 0.01102886,0.00597148])#这个写死,用于进行debug
+        br.sendTransform(translation=target_pose[:3],rotation=target_pose[3:],time=rospy.Time.now(),child="pudding_box",parent="world")
+        target_pose[0]=target_pose[0]-0.1
+        target_pose[2]=target_pose[2]+0.25
+        target_pose[3:]=target_pose[3:].dot(quaternion.euler_matrix(math.pi*0.5,0,0,))
+        br.sendTransform(translation=target_pose[:3],rotation=target_pose[3:],time=rospy.Time.now(),child="target",parent="world")
+
+        # target_pose[3:]=np.array([-0.33775, 0.34244, -0.62195, 0.61793])
+
+        # target_pose[3:]=target_pose[3:].dot(quaternion.euler_matrix(0.01,math.pi*0.1,0))
+
+        time.sleep(1)
 
 if __name__ == '__main__':
     # test_sapien()
     # test_gripper()
-    move_home()
+    # move_home()
+    # move_realsense()
+    check_pose()
+    # move_robot()
 
 
 

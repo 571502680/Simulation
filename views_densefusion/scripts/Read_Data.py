@@ -158,8 +158,8 @@ class Read_Data:
         else:
             print("[Error] Please input the correct simulator name!")
 
-    ####################################读取Kinect图片的函数##################################
-    def depth_process_callback_k(self,data,see_image=False):
+    ####################################读取Kinect图片的函数,私有函数,可以不用例会##################################
+    def __depth_process_callback_k(self,data,see_image=False):
         """
         深度图像处理
         :param data:深度图像
@@ -189,7 +189,7 @@ class Read_Data:
             cv.imshow("color_map",color_map)
             cv.waitKey(3)
             
-    def image_process_callback_k(self,data,see_image=False,read_HSV=False):
+    def __image_process_callback_k(self,data,see_image=False,read_HSV=False):
         """
         RGB图可视化
         :param data:rgb图像
@@ -221,27 +221,23 @@ class Read_Data:
                 cv.imshow("hsv_get",hsv_image)
             cv.waitKey(3)
 
-    def camera_info_callback_k(self,data):
+    def __camera_info_callback_k(self,data):
         print("Camera Info is :\n",data)
         self.camera_info_k=data
 
-    def begin_get_depth_k(self):
-        callback_lambda=lambda x:self.depth_process_callback_k(x,see_image=False)
+    def __begin_get_depth_k(self):
+        callback_lambda=lambda x:self.__depth_process_callback_k(x,see_image=False)
         rospy.Subscriber("/kinect/depth/image_raw",Image,callback_lambda)
 
-    def begin_get_image_k(self):
-        callback_lambda=lambda x:self.image_process_callback_k(x,see_image=False,read_HSV=False)
+    def __begin_get_image_k(self):
+        callback_lambda=lambda x:self.__image_process_callback_k(x,see_image=False,read_HSV=False)
         rospy.Subscriber("/kinect/color/image_raw",Image,callback_lambda)
 
-    def begin_get_camera_info_k(self):
-        rospy.Subscriber("/kinect/color/camera_info",CameraInfo,self.camera_info_callback_k)
+    def __begin_get_camera_info_k(self):
+        rospy.Subscriber("/kinect/color/camera_info",CameraInfo,self.__camera_info_callback_k)
 
-    def begin_get_images_k(self):
-        self.begin_get_depth_k()
-        self.begin_get_image_k()
-
-    ####################################读取Kinect图片的函数##################################
-    def depth_process_callback_r(self,data,see_image=False):
+    ####################################读取Realsense图片的函数,私有函数,可以不用理会##################################
+    def __depth_process_callback_r(self,data,see_image=False):
         """
         深度图像处理
         :param data:深度图像
@@ -271,7 +267,7 @@ class Read_Data:
             cv.imshow("color_map",color_map)
             cv.waitKey(3)
 
-    def image_process_callback_r(self,data,see_image=False,read_HSV=False):
+    def __image_process_callback_r(self,data,see_image=False,read_HSV=False):
         """
         RGB图可视化
         :param data:rgb图像
@@ -303,24 +299,20 @@ class Read_Data:
                 cv.imshow("hsv_get",hsv_image)
             cv.waitKey(3)
 
-    def camera_info_callback_r(self,data):
+    def __camera_info_callback_r(self,data):
         print("Camera Info is :\n",data)
         self.camera_info_r=data
 
-    def begin_get_depth_r(self):
-        callback_lambda=lambda x:self.depth_process_callback_r(x,see_image=False)
+    def __begin_get_depth_r(self):
+        callback_lambda=lambda x:self.__depth_process_callback_r(x,see_image=False)
         rospy.Subscriber("/realsense/depth/image_raw",Image,callback_lambda)
 
-    def begin_get_image_r(self):
-        callback_lambda=lambda x:self.image_process_callback_r(x,see_image=False,read_HSV=False)
+    def __begin_get_image_r(self):
+        callback_lambda=lambda x:self.__image_process_callback_r(x,see_image=False,read_HSV=False)
         rospy.Subscriber("/realsense/color/image_raw",Image,callback_lambda)
 
-    def begin_get_camera_info_r(self):
-        rospy.Subscriber("/realsense/color/camera_info",CameraInfo,self.camera_info_callback_r)
-
-    def begin_get_images_r(self):
-        self.begin_get_depth_r()
-        self.begin_get_image_r()
+    def __begin_get_camera_info_r(self):
+        rospy.Subscriber("/realsense/color/camera_info",CameraInfo,self.__camera_info_callback_r)
 
     ####################################开启读取函数接口##################################
     def begin_get_images(self,camera="kinect"):
@@ -331,18 +323,18 @@ class Read_Data:
         """
         if camera=="kinect":
             print("[Info] Begin get kinect images")
-            self.begin_get_depth_k()
-            self.begin_get_image_k()
+            self.__begin_get_depth_k()
+            self.__begin_get_image_k()
         elif camera=="realsense":
             print("[Info] Begin get realsense images")
-            self.begin_get_depth_r()
-            self.begin_get_image_r()
+            self.__begin_get_depth_r()
+            self.__begin_get_image_r()
         elif camera=="both":
             print("[Info] Begin get kinect and realsense images")
-            self.begin_get_depth_k()
-            self.begin_get_image_k()
-            self.begin_get_depth_r()
-            self.begin_get_image_r()
+            self.__begin_get_depth_k()
+            self.__begin_get_image_k()
+            self.__begin_get_depth_r()
+            self.__begin_get_image_r()
         else:
             print("[Error] The input camera name wrong,please input kinect/realsense/both")
 
@@ -513,15 +505,15 @@ class Read_Data:
         return Trans_world2Camera
 
 #################################测试函数##################################
-def test_read_image_k():
+def test_read_image():
     """
     用于测试读取图片函数
     @return:
     """
     read_Data=Read_Data(init_node=True)
-    read_Data.begin_get_images_k()
+    read_Data.begin_get_images("realsense")
     while not rospy.is_shutdown():
-        bgr_image,depth_image=read_Data.get_images("kinect")
+        bgr_image,depth_image=read_Data.get_images("realsense")
         if bgr_image is not None:
             cv.imshow("bgr_iamge",bgr_image)
             cv.waitKey(3)
@@ -672,8 +664,8 @@ def get_pose_in_camera():
 
 if __name__ == '__main__':
     # test_get_Trans_Matrix()
-    # test_read_image_k()
-    test_read_image_two_camera()
+    test_read_image()
+    # test_read_image_two_camera()
     # test_get_camera_info()
     # test_get_object_pose()
     # check_object_pose()

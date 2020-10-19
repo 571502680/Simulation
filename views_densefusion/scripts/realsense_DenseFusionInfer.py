@@ -377,22 +377,42 @@ class DenseFusion_Detector:
         pose_results=self.get_poses_withlabel(rgb_image,depth_image,label_image,object_list,debug=debug)
         return pose_results
 
-    def see_detect_result(self,debug=False):
+    def see_detect_result_k(self,debug=False):
         """
         这里面用于看这个场景的识别结果
         @return:
         """
-        read_Data=Read_Data.Read_Data(read_images=True)
+        read_Data=Read_Data.Read_Data()
+        read_Data.begin_get_images(camera="both")
         rate=rospy.Rate(10)
         with torch.no_grad():
             while not rospy.is_shutdown():
-                if read_Data.bgr_image is not None and read_Data.depth_image is not None:
-                    pose_result=self.get_pose(read_Data.bgr_image,read_Data.depth_image,debug=debug)
+                if read_Data.bgr_image_k is not None and read_Data.depth_image_k is not None:
+                    pose_result=self.get_pose(read_Data.bgr_image_k,read_Data.depth_image_k,debug=debug)
                     print("The result is:\n {}".format(pose_result))
                     break
                 else:
                     print('[Warning] color_image not exist')
                 rate.sleep()
+                
+    def see_detect_result_r(self,debug=False):
+        """
+        这里面用于看这个场景的识别结果
+        @return:
+        """
+        read_Data=Read_Data.Read_Data()
+        read_Data.begin_get_images(camera="both")
+        rate=rospy.Rate(10)
+        with torch.no_grad():
+            while not rospy.is_shutdown():
+                if read_Data.bgr_image_r is not None and read_Data.depth_image_r is not None:
+                    pose_result=self.get_pose(read_Data.bgr_image_r,read_Data.depth_image_r,debug=debug)
+                    print("The result is:\n {}".format(pose_result))
+                    break
+                else:
+                    print('[Warning] color_image not exist')
+                rate.sleep()
+
 
     ###################################采用Service进行发布#######################################
     def get_worldframe_pose(self,pose_results):
@@ -613,8 +633,8 @@ if __name__ == '__main__':
     densefusion_Detector=DenseFusion_Detector(init_node=True)
     # densefusion_Detector.pub_pose_array()#发布所有物体Pose
     # densefusion_Detector.check_densefusion("1-1")#确定场景识别精度
-    densefusion_Detector.check_densefusion_r("1-1")#确定场景识别精度
-    # densefusion_Detector.see_detect_result(debug=True)#用于查看这个场景的识别结果
+    # densefusion_Detector.check_densefusion_r("1-1")#确定场景识别精度
+    densefusion_Detector.see_detect_result_r(debug=True)#用于查看这个场景的识别结果
     # change_pth()#更改网络zip包
 
 
