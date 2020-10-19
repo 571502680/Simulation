@@ -621,14 +621,8 @@ def get_grasp_pose():
                 #获取更精确的抓取目标
                 see_Point_Cloud.get_grasprect(grasp_number=count_i,see_image=True)
 
-
                 #4:执行抓取任务
-
             print("Robot will go to the next big Pose")
-
-
-
-
 
 if __name__ == '__main__':
     move_object_upper()
