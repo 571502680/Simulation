@@ -624,8 +624,36 @@ def get_grasp_pose():
                 #4:执行抓取任务
             print("Robot will go to the next big Pose")
 
+def record_data():
+    """
+    用于录制数据
+    :return:
+    """
+    see_Point_Cloud=See_Point_Cloud(init_node=True)
+    see_Point_Cloud.begin_get_realsense_images()
+    robot=robot_control.Robot()
+    move_pose=see_Point_Cloud.generate_realsense_movepoints()#获取桌面运动点,进行桌面平动
+    robot.getpose_home(t=1)
+    while not rospy.is_shutdown():
+        robot.getpose_home(t=1)
+        time.sleep(1)
+        #1:运动到待抓取位置
+        for pose in move_pose:
+            # print("Target Pose is :{}".format(pose))
+            arrive=robot.motion_generation(pose[np.newaxis,:],vel=0.5)
+            time.sleep(0.5)
+
+            if not arrive:
+                robot.getpose_home()
+                print("Arrive Failed,the target pose is:{}".format(pose))
+
+            #2:解析深度图得到对应的Mask,然后获取图像中的中心点:
+            # cv.imshow("rgb_image",see_Point_Cloud.realsense_bgr_image)
+            # cv.waitKey(3)
+
+
 if __name__ == '__main__':
-    move_object_upper()
+    record_data()
 
 
 

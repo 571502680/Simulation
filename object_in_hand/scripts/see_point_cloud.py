@@ -116,7 +116,6 @@ class See_Point_Cloud:
         realsense_depth_sub=rospy.Subscriber("/realsense/depth/image_raw",Image,callback_lambda1)
         bgr_image=rospy.Subscriber("/realsense/color/image_raw",Image,self.realsense_bgr_image_callback)
 
-
     def process_realsense_depth_image(self,data,see_image=False):
         """
 
@@ -162,9 +161,6 @@ class See_Point_Cloud:
 
         cv.imshow("bgr_image",self.realsense_bgr_image)
         cv.waitKey(1)
-
-
-
 
     def temp(self):
         robot=robot_control.Robot()
