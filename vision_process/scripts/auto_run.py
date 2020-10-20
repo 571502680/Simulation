@@ -355,7 +355,9 @@ class Auto_MakeData:
 
 if __name__ == '__main__':
     auto_MakeData=Auto_MakeData(HSV_MODE=False)
-    # auto_MakeData.auto_run(begin_id='4-1')
+
+    auto_MakeData.auto_run(begin_id='2-78')
+
     # auto_MakeData.clean_dataset()
     # auto_MakeData.run_error_data()
     # auto_MakeData.compare_images()
