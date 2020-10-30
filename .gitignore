@@ -63,6 +63,7 @@ vision_process/scripts/ALi_Dataset/models
 vision_process/scripts/ALi_Dataset
 object_in_hand/scripts/data-10.20
 object_in_hand/scripts/dataset/MyFile
+object_in_hand/scripts/dataset/each_ojbect
 *.tar.xz
 
 

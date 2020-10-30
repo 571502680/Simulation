@@ -320,7 +320,7 @@ def get_images_example():
         cv.waitKey(1)
 
 
-def capture_images():
+def capture_images(save_path="MyFile"):
     camera=RS(resolution='640x480',align_to_depth=False,use_filter=True)
     save_number=0
 
@@ -336,8 +336,8 @@ def capture_images():
 
         input_info=cv.waitKey(1)
         if input_info==115:#'s'保存
-            cv.imwrite("MyFile/{}_color.png".format(save_number),color_image)
-            cv.imwrite("MyFile/{}_depth.png".format(save_number),depth_image)#OpenCV3可以直接保存深度图,2不行
+            cv.imwrite(save_path+"/{}_color.png".format(save_number),color_image)
+            cv.imwrite(save_path+"/{}_depth.png".format(save_number),depth_image)#OpenCV3可以直接保存深度图,2不行
             print("Save_image {}".format(save_number))
             save_number=save_number+1
 
@@ -353,5 +353,5 @@ def check_depth():
 
 if __name__ == '__main__':
     # get_images_example()
-    # capture_images()
-    check_depth()
+    capture_images(save_path="each_ojbect")
+    # check_depth()

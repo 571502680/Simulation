@@ -10,8 +10,11 @@ import numpy as np
 
 
 class Tradition_Way:
-    def __init__(self):
-        self.images_path="MyFile"
+    def __init__(self,images_path=None):
+        if images_path is None:
+            self.images_path="MyFile"
+        else:
+            self.images_path=images_path
 
         #读取图片
         self.read_image_depth=None
@@ -98,7 +101,6 @@ class Tradition_Way:
             cv.waitKey(0)
         return ROI
 
-
     def process_rotate_rect(self,rotate_rect):
         """
         用于处理旋转矩形,得到一个长短边正确的旋转矩形
@@ -116,11 +118,17 @@ class Tradition_Way:
         else:
             return rotate_rect
 
-    def get_grasp_rect(self,ROI,image,debug=False,see_image=False):
-        pre_rects=[]
-        best_grasp_rect=None
-
-        #1:直接基于深度图分割
+    def show_pre_grasp_rect(self,ROI,image,debug=False,see_image=False):
+        """
+        这里面展示一张图里面所有的抓取矩形框
+        之后机械臂能够运动的时候,需要再做精细的调整
+        :param ROI:
+        :param image:
+        :param debug:
+        :param see_image:
+        :return:
+        """
+        #1:对ROI找轮廓
         contours,_=cv.findContours(ROI,cv.RETR_TREE,cv.CHAIN_APPROX_SIMPLE)
 
         for contour in contours:
@@ -130,52 +138,96 @@ class Tradition_Way:
             rotate_rect=cv.minAreaRect(contour)
             rotate_rect=self.process_rotate_rect(rotate_rect)#确保长宽正确
             if debug:
-                #绘制物体轮廓
+                #绘制物体框
                 draw_box=cv.boxPoints(rotate_rect)
                 draw_box=np.int0(draw_box)
-                cv.drawContours(image,[draw_box],0,(0,0,255),3)
+                cv.drawContours(image,[draw_box],0,(0,0,255),2)
 
-            #3:获取抓取矩形
+            #2:获取抓取矩形
             grasp_rect=(rotate_rect[0],(rotate_rect[1][0]+50,100),rotate_rect[2])
-            pre_rects.append(grasp_rect)
 
-            if len(pre_rects)<1:
-                return None
-
-            #2:进行抓取矩形框绘制
-            draw_box=cv.boxPoints(grasp_rect)
-            draw_box=np.int0(draw_box)
-            cv.drawContours(image,[draw_box],0,(0,255,0),3)
+            #3:进行抓取矩形框绘制
+            if debug:
+                draw_box=cv.boxPoints(grasp_rect)
+                draw_box=np.int0(draw_box)
+                cv.drawContours(image,[draw_box],0,(0,255,0),3)
 
         if see_image:
             cv.imshow("grasprect_BGR_image",image)
             cv.waitKey(0)
 
-        return best_grasp_rect
+    ##############################进行每个物品信息识别任务##############################
+    def get_obj_info(self,ROI,image,depth,debug=False,see_image=False):
+        #1:对ROI找轮廓
+        contours,_=cv.findContours(ROI,cv.RETR_TREE,cv.CHAIN_APPROX_SIMPLE)
+
+        for i,contour in enumerate(contours):
+            if cv.contourArea(contour)<3000:
+                continue
+            #1.1:生成标注框
+            rotate_rect=cv.minAreaRect(contour)
+            rotate_rect=self.process_rotate_rect(rotate_rect)#确保长宽正确
+
+            if debug:
+                #绘制物体框
+                draw_box=cv.boxPoints(rotate_rect)
+                draw_box=np.int0(draw_box)
+                cv.drawContours(image,[draw_box],0,(0,0,255),2)
+
+            #1.2:单独切割出物体的轮廓
+            temp_array=np.zeros(ROI.shape,dtype=np.uint8)
+            cv.drawContours(temp_array,contours,i,255,thickness=-1)
+            area=cv.contourArea(contour)
+            points=len(np.nonzero(temp_array)[0])
+
+            depth_roi=depth*temp_array/255.0
+            mean=np.sum(depth_roi)/points
+
+
+
+            cv.putText(image,"{:.3f}".format(mean),tuple(draw_box[0]),cv.FONT_HERSHEY_SIMPLEX,0.8,(0,255,0),2)
+
+        if see_image:
+            cv.imshow("temp_array",temp_array)
+            cv.imshow("image",image)
+            cv.waitKey(0)
 
 
 def see_images():
     tradition_Way=Tradition_Way()
     tradition_Way.see_images()
 
-def get_seg():
+def get_pre_grasp():
     """
-    基于depth进行图像分割,得到分割图片
-    :param depth: 深度图
-    :param see_depth: 是否使用回调函数查看图片
-    :param debug: 是否进行debug
+    基于depth进行图像分割,得到分割图片,最终得到这张图的所有潜在抓取矩形框
     :return:
     """
     tradition_Way=Tradition_Way()
     for number in range(20):
         image,depth=tradition_Way.get_images(number)
         ROI=tradition_Way.get_roi(720,depth,image)
-        tradition_Way.get_grasp_rect(ROI,image,debug=True,see_image=True)
+        tradition_Way.show_pre_grasp_rect(ROI,image,debug=True,see_image=True)
+
+
+def get_objects_info():
+    """
+    基于得到的每个物体的框,进行物体信息提取
+    :return:
+    """
+    tradition_Way=Tradition_Way("each_ojbect")
+    for number in range(36):
+        image,depth=tradition_Way.get_images(number)
+        ROI=tradition_Way.get_roi(410,depth,image)
+        cv.imshow("ROI",ROI)
+        tradition_Way.get_obj_info(ROI,image,depth,debug=True,see_image=True)
+
+
 
 
 
 
 if __name__ == '__main__':
-    get_seg()
+    # get_pre_grasp()
     # see_images()
+    get_objects_info()
 
