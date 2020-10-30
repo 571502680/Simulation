@@ -62,7 +62,8 @@ vision_process/scripts/ALi_Dataset/data
 vision_process/scripts/ALi_Dataset/models
 vision_process/scripts/ALi_Dataset
 object_in_hand/scripts/data-10.20
-
+object_in_hand/scripts/dataset/MyFile
+*.tar.xz
 
 
 
