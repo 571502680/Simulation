@@ -234,7 +234,7 @@ def see_object_from_realsense():
         #整个桌面平行进行运动,z值固定
         for pose in move_pose:
             # print("Target Pose is :{}".format(pose))
-            print pose
+            print(pose)
             arrive=robot.motion_generation(pose[np.newaxis,:],vel=0.2)
             if not arrive:
                 robot.getpose_home()
