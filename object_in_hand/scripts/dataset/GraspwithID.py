@@ -1,15 +1,14 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
 """
-这里面快速测试一下,看看传统方法是否可行
-全部基于Python3进行实现
+这里面使用神经网络与传统方法结合进行矩形框的输出
 """
 import glob
 import cv2 as cv
 import numpy as np
 
+from Center_DetectClass import CenterDetect
 
-class Tradition_Way:
+
+class GraspwithID:
     def __init__(self,images_path=None):
         if images_path is None:
             self.images_path="offical_dataset"
@@ -109,6 +108,45 @@ class Tradition_Way:
             cv.waitKey(0)
         return ROI
 
+    def get_roi_singleobj(self,depth_range,depth_image,image,see_depth=False,debug=False):
+        """
+        基于depth_range获取深度图图像
+        :param depth_range: cv.inRange的参数
+        :param depth_image: 深度图
+        :param image: BGR图,用于进行debug
+        :param see_depth: 是否查看图片的深度值
+        :param debug: 是否查看color_map用于调参
+        :return:
+        """
+
+        #查看图片
+        if debug:
+            color_depth=depth_image.copy()
+            cv.normalize(color_depth,color_depth,255,0,cv.NORM_MINMAX)
+            color_depth=color_depth.astype(np.uint8)
+            color_map=cv.applyColorMap(color_depth,cv.COLORMAP_JET)
+            cv.imshow("color_map",color_map)
+
+        #进行图片分割
+        if see_depth:
+            cv.namedWindow("Read_Depth",cv.WINDOW_NORMAL)
+            cv.imshow("Read_Depth",image)
+            cv.setMouseCallback("Read_Depth",self.read_depth_callback)
+
+        #这里可以使用很大的闭操作
+
+
+
+        ROI=cv.inRange(depth_image,0,depth_range)
+
+        #进行ROI大小选择
+        ROI=cv.morphologyEx(ROI,cv.MORPH_CLOSE,self.generate_kernel(10,10))
+
+        if debug:
+            cv.imshow("ROI",ROI)
+            cv.waitKey(0)
+        return ROI
+
     def process_rotate_rect(self,rotate_rect):
         """
         用于处理旋转矩形,得到一个长短边正确的旋转矩形
@@ -169,6 +207,37 @@ class Tradition_Way:
             cv.imshow("grasprect_BGR_image",image)
             cv.waitKey(0)
 
+    def get_grasp_fromroi(self,ROI_single):
+        contours,_=cv.findContours(ROI_single,cv.RETR_TREE,cv.CHAIN_APPROX_SIMPLE)
+
+        if len(contours)<1:
+            print("[Warning] the ROI_single has no ojbect")
+            return None
+
+        if len(contours)>1:
+            #针对这里面进行形态学操作,让他们变成一个
+            ROI_single=cv.morphologyEx(ROI_single,cv.MORPH_CLOSE,self.generate_kernel(30,30))
+            contours,_=cv.findContours(ROI_single,cv.RETR_TREE,cv.CHAIN_APPROX_SIMPLE)
+            contours=sorted(contours,key=lambda data:len(data))
+
+            contour=contours[-1]
+            rotate_rect=cv.minAreaRect(contour)
+            rotate_rect=self.process_rotate_rect(rotate_rect)#确保长宽正确
+
+            #2:获取抓取矩形
+            grasp_rect=(rotate_rect[0],(rotate_rect[1][0]+50,100),rotate_rect[2])
+            return grasp_rect
+
+
+        if len(contours)==1:#只有一个的情况的解决
+            for contour in contours:
+                rotate_rect=cv.minAreaRect(contour)
+                rotate_rect=self.process_rotate_rect(rotate_rect)#确保长宽正确
+
+                #2:获取抓取矩形
+                grasp_rect=(rotate_rect[0],(rotate_rect[1][0]+50,100),rotate_rect[2])
+                return grasp_rect
+
     ##############################进行每个物品信息识别任务##############################
     def get_obj_info(self,ROI,image,depth,debug=False,see_image=False):
         #1:对ROI找轮廓
@@ -205,39 +274,114 @@ class Tradition_Way:
             cv.imshow("image",image)
             cv.waitKey(0)
 
+    ##############################带种类的抓取矩形框获取##############################
+    def getgrasp_withid(self,results,depth,image=None,debug=False,see_image=False):
+        """
+        用于获取带种类的抓取id
+        :param results: 网络识别结果
+        :param depth: 深度图
+        :param image: 颜色图
+        :param debug:
+        :param see_image:
+        :return:
+        """
+        grasp_rect=[]
+
+        #1:获取ROI
+        ROI=self.get_roi(600,depth,image)
+        contours,_=cv.findContours(ROI,cv.RETR_TREE,cv.CHAIN_APPROX_SIMPLE)
+
+        #2:基于result进行ROI选择,并最终生成抓取矩形框,在image上显示
+        for result in results:
+            x1,y1,x2,y2,score,category=result
+            if see_image:
+                cv.rectangle(image,(x1,y1),(x2,y2),(0,255,0),2)
+                cv.putText(image,"{}".format(category),(x1,y1),cv.FONT_HERSHEY_SIMPLEX,0.8,(0,255,0),thickness=2)
+
+            #基于矩形框进行ROI的二次分割
+            temp_array=np.zeros(ROI.shape,dtype=np.uint8)
+            temp_array[y1:y2,x1:x2]=255
+            _,inverse_array=cv.threshold(temp_array,200,255,cv.THRESH_BINARY_INV)
+            inverse_array=inverse_array.astype(np.int32)
+            inverse_array=inverse_array*10
+
+            temp_depth=depth.copy()
+            temp_depth=temp_depth.astype(np.int32)
+            temp_depth=temp_depth+inverse_array
+
+            if debug:
+                cv_image=temp_depth.copy()
+                cv.normalize(cv_image,cv_image,255,0,cv.NORM_MINMAX)
+                cv_image=cv_image.astype(np.uint8)
+                color_map=cv.applyColorMap(cv_image,cv.COLORMAP_JET)
+                cv.imshow("color_map",color_map)
+
+
+            ROI_single=self.get_roi_singleobj(600,temp_depth,image)
+            if debug:
+                cv.imshow("ROI_single",ROI_single)
+
+            grasp_rect=self.get_grasp_fromroi(ROI_single)
+            if grasp_rect is not None:
+                draw_box=cv.boxPoints(grasp_rect)
+                draw_box=np.int0(draw_box)
+                cv.drawContours(image,[draw_box],0,(0,0,255),3)
+
+
+
+        if see_image:
+            cv.imshow("image",image)
+            cv.waitKey(0)
+
 
 def see_images():
-    tradition_Way=Tradition_Way()
-    tradition_Way.see_images()
+    graspwithID=GraspwithID()
+    graspwithID.see_images()
 
 def get_pre_grasp():
     """
     基于depth进行图像分割,得到分割图片,最终得到这张图的所有潜在抓取矩形框
     :return:
     """
-    tradition_Way=Tradition_Way()
+    graspwithID=GraspwithID()
     for number in range(27):
-        image,depth=tradition_Way.get_images(number)
-        ROI=tradition_Way.get_roi(600,depth,image)
+        image,depth=graspwithID.get_images(number)
+        ROI=graspwithID.get_roi(600,depth,image)
         cv.imshow("ROI",ROI)
-        tradition_Way.show_pre_grasp_rect(ROI,image,debug=True,see_image=True,draw_bbox_flag=True)
-
+        graspwithID.show_pre_grasp_rect(ROI,image,debug=True,see_image=True,draw_bbox_flag=True)
 
 def get_objects_info():
     """
     基于得到的每个物体的框,进行物体信息提取
     :return:
     """
-    tradition_Way=Tradition_Way("offical_dataset")
+    graspwithID=GraspwithID("offical_dataset")
     for number in range(27):
-        image,depth=tradition_Way.get_images(number)
-        ROI=tradition_Way.get_roi(600,depth,image)
+        image,depth=graspwithID.get_images(number)
+        ROI=graspwithID.get_roi(600,depth,image)
         cv.imshow("ROI",ROI)
-        tradition_Way.get_obj_info(ROI,image,depth,debug=True,see_image=True)
+        graspwithID.get_obj_info(ROI,image,depth,debug=True,see_image=True)
+
+def get_id_grasp():
+    """
+    获取带id的抓取矩形框
+    :return:
+    """
+    #1:对图片中的物体进行识别
+    graspwithID=GraspwithID()
+    center_detect=CenterDetect(model_path="/home/elevenjiang/Documents/Project/IROS_Pick/Code/2DDetect/AutoLabel/CenterNet_File/CenterNet_IROSPICK/models/model_last.pth",Task='ctdet')
+    for number in range(297):
+        image,depth=graspwithID.get_images(number)
+        detections=center_detect.detect(image)#获取识别内容,
+        results=center_detect.fileter_detections_allcategory(detections=detections)
+
+        #3:对于每个物体的ROI进行一次清洗,最终解决问题
+        graspwithID.getgrasp_withid(results,depth,image,see_image=True,debug=True)
 
 
 if __name__ == '__main__':
-    get_pre_grasp()
+    # get_pre_grasp()
     # see_images()
     # get_objects_info()
+    get_id_grasp()
 

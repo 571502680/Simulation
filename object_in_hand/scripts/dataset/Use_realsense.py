@@ -353,5 +353,5 @@ def check_depth():
 
 if __name__ == '__main__':
     # get_images_example()
-    capture_images(save_path="each_ojbect")
+    capture_images(save_path="pick_logic")
     # check_depth()

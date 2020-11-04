@@ -64,7 +64,14 @@ vision_process/scripts/ALi_Dataset
 object_in_hand/scripts/data-10.20
 object_in_hand/scripts/dataset/MyFile
 object_in_hand/scripts/dataset/each_ojbect
+object_in_hand/scripts/dataset/pick_logic
+object_in_hand/scripts/dataset/scenes
+object_in_hand/scripts/dataset/offical_dataset
+object_in_hand/scripts/dataset/autolabel_dataset
+object_in_hand/scripts/dataset/all_detect_data
+
 *.tar.xz
+
 
 
 
